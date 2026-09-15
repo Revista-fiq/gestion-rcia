@@ -10,8 +10,13 @@ function mostrarAviso(idContenedor, mensaje, tipo = 'info') {
   el.innerHTML = `<div class="aviso aviso-${tipo}">${mensaje}</div>`;
 }
 
-// Redirige al dashboard si ya hay una sesión activa
+// Redirige al dashboard si ya hay una sesión activa.
+// Solo aplica en index.html (donde existe el formulario de login);
+// en dashboard.html y nuevo-manuscrito.html este archivo también se
+// carga (por el botón "Cerrar sesión"), así que ahí NO debe ejecutarse
+// o provoca un bucle de redirección hacia sí misma.
 async function redirigirSiHaySesion() {
+  if (!document.getElementById('btn-login')) return;
   const { data: { session } } = await db.auth.getSession();
   if (session) window.location.href = 'dashboard.html';
 }
