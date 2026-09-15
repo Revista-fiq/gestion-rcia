@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Enviar manuscrito — RCIA-UADY</title>
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+<div class="barra-superior">
+  <div class="marca">
+    <img src="https://revista-fiq.github.io/P-gina-Web/Logo-dia.png" alt="Logo UADY FIQ">
+    RCIA-UADY · Gestión Editorial
+  </div>
+  <nav>
+    <a href="dashboard.html">Mis manuscritos</a>
+    <a href="#" onclick="cerrarSesion(); return false;">Cerrar sesión</a>
+  </nav>
+</div>
+
+<div class="contenedor" style="max-width: 640px;">
+  <h1>Enviar nuevo manuscrito</h1>
+  <p class="subtitulo">Los campos marcados con * son obligatorios. Recibirás un folio y acuse de recibo en un máximo de 5 días hábiles.</p>
+
+  <div id="aviso-envio"></div>
+
+  <div class="tarjeta">
+    <label for="titulo">Título (español) *</label>
+    <input type="text" id="titulo">
+
+    <label for="titulo_en">Título (inglés) *</label>
+    <input type="text" id="titulo_en">
+
+    <label for="resumen">Resumen *</label>
+    <textarea id="resumen"></textarea>
+
+    <label for="tipo">Tipo de contribución *</label>
+    <select id="tipo">
+      <option value="articulo_original">Artículo original</option>
+      <option value="revision_bibliografica">Revisión bibliográfica</option>
+      <option value="nota_investigacion">Nota de investigación</option>
+    </select>
+
+    <label for="area">Área temática *</label>
+    <input type="text" id="area" placeholder="ej. Ciencia e Ingeniería de Alimentos">
+
+    <label for="coautores">Coautores (opcional)</label>
+    <textarea id="coautores" placeholder="Un coautor por línea: Nombre completo, ORCID, institución"></textarea>
+
+    <label for="archivo_manuscrito">Manuscrito completo (.docx) *</label>
+    <input type="file" id="archivo_manuscrito" accept=".doc,.docx">
+
+    <label for="archivo_carta">Carta de presentación firmada *</label>
+    <input type="file" id="archivo_carta" accept=".pdf">
+
+    <label for="archivo_conflictos">Declaración de conflictos de interés *</label>
+    <input type="file" id="archivo_conflictos" accept=".pdf">
+
+    <label for="archivo_suplementario">Material suplementario (opcional)</label>
+    <input type="file" id="archivo_suplementario">
+
+    <button id="btn-enviar">Enviar manuscrito</button>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="js/supabase-client.js"></script>
+<script src="js/auth.js"></script>
+<script src="js/submit.js"></script>
+</body>
+</html>

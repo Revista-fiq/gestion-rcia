@@ -1,0 +1,206 @@
+/* =====================================================================
+   RCIA-UADY — Sistema de Gestión Editorial
+   Tema consistente con revista-fiq.github.io/P-gina-Web
+   ===================================================================== */
+
+:root {
+  --negro: #0b0b0b;
+  --blanco: #ffffff;
+  --gris-fondo: #f7f8fa;
+  --gris-borde: #e2e5ea;
+  --gris-texto: #4a5160;
+  --azul-info-fondo: #eef4fb;
+  --azul-info-borde: #cfe0f3;
+  --verde-ok-fondo: #eafaf0;
+  --verde-ok-borde: #bfe8cf;
+  --ambar-alerta-fondo: #fff6e8;
+  --ambar-alerta-borde: #f2ddad;
+  --rojo-error-fondo: #fdecec;
+  --rojo-error-borde: #f3c6c6;
+  --radio: 6px;
+}
+
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  font-family: -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  color: var(--negro);
+  background: var(--gris-fondo);
+  line-height: 1.5;
+}
+
+/* --- Barra superior (igual que el sitio público) --- */
+.barra-superior {
+  background: var(--negro);
+  color: var(--blanco);
+  padding: 14px 24px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 14px;
+}
+
+.barra-superior .marca {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-weight: 600;
+  letter-spacing: 0.2px;
+}
+
+.barra-superior .marca img { height: 28px; }
+
+.barra-superior nav a {
+  color: var(--blanco);
+  text-decoration: none;
+  margin-left: 20px;
+  font-size: 14px;
+  opacity: 0.85;
+}
+
+.barra-superior nav a:hover,
+.barra-superior nav a:focus-visible { opacity: 1; text-decoration: underline; }
+
+/* --- Contenedor principal --- */
+.contenedor {
+  max-width: 960px;
+  margin: 0 auto;
+  padding: 32px 24px 64px;
+}
+
+h1 { font-size: 24px; margin: 0 0 4px; }
+h2 { font-size: 18px; margin: 32px 0 12px; }
+.subtitulo { color: var(--gris-texto); margin: 0 0 24px; font-size: 14px; }
+
+/* --- Tarjetas --- */
+.tarjeta {
+  background: var(--blanco);
+  border: 1px solid var(--gris-borde);
+  border-radius: var(--radio);
+  padding: 20px;
+  margin-bottom: 16px;
+}
+
+.tarjeta-cabecera {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 12px;
+}
+
+.folio {
+  font-family: ui-monospace, "SFMono-Regular", Menlo, monospace;
+  font-size: 12px;
+  color: var(--gris-texto);
+}
+
+.titulo-manuscrito { font-weight: 600; font-size: 15px; margin: 4px 0; }
+
+/* --- Estados (semáforo) --- */
+.estado {
+  display: inline-block;
+  font-size: 12px;
+  font-weight: 600;
+  padding: 3px 10px;
+  border-radius: 999px;
+  white-space: nowrap;
+}
+
+.estado-recibido,
+.estado-acuse_enviado { background: var(--azul-info-fondo); border: 1px solid var(--azul-info-borde); color: #23507d; }
+
+.estado-en_revision,
+.estado-dictamen_emitido,
+.estado-en_correccion { background: var(--ambar-alerta-fondo); border: 1px solid var(--ambar-alerta-borde); color: #8a6a17; }
+
+.estado-aceptado,
+.estado-publicado { background: var(--verde-ok-fondo); border: 1px solid var(--verde-ok-borde); color: #1e7a42; }
+
+.estado-rechazado,
+.estado-desistido { background: var(--rojo-error-fondo); border: 1px solid var(--rojo-error-borde); color: #a3312f; }
+
+/* --- Formularios --- */
+label {
+  display: block;
+  font-size: 13px;
+  font-weight: 600;
+  margin: 14px 0 6px;
+}
+
+input[type="text"],
+input[type="email"],
+input[type="password"],
+input[type="file"],
+select,
+textarea {
+  width: 100%;
+  padding: 9px 11px;
+  border: 1px solid var(--gris-borde);
+  border-radius: var(--radio);
+  font-size: 14px;
+  font-family: inherit;
+  background: var(--blanco);
+}
+
+textarea { min-height: 100px; resize: vertical; }
+
+button, .boton {
+  background: var(--negro);
+  color: var(--blanco);
+  border: none;
+  padding: 10px 18px;
+  border-radius: var(--radio);
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  margin-top: 18px;
+}
+
+button:hover { opacity: 0.88; }
+button:disabled { opacity: 0.5; cursor: not-allowed; }
+
+button.secundario {
+  background: var(--blanco);
+  color: var(--negro);
+  border: 1px solid var(--gris-borde);
+}
+
+/* --- Bitácora de seguimiento --- */
+.bitacora { border-left: 2px solid var(--gris-borde); margin-left: 6px; padding-left: 20px; }
+
+.bitacora-item { position: relative; padding-bottom: 18px; font-size: 13px; }
+
+.bitacora-item::before {
+  content: '';
+  position: absolute;
+  left: -25px;
+  top: 4px;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--negro);
+}
+
+.bitacora-fecha { color: var(--gris-texto); font-size: 12px; }
+
+/* --- Avisos --- */
+.aviso {
+  padding: 12px 14px;
+  border-radius: var(--radio);
+  font-size: 13px;
+  margin: 16px 0;
+}
+
+.aviso-info { background: var(--azul-info-fondo); border: 1px solid var(--azul-info-borde); }
+.aviso-ok { background: var(--verde-ok-fondo); border: 1px solid var(--verde-ok-borde); }
+.aviso-error { background: var(--rojo-error-fondo); border: 1px solid var(--rojo-error-borde); }
+
+/* --- Utilidades --- */
+.vacio { color: var(--gris-texto); font-size: 14px; padding: 24px 0; text-align: center; }
+.oculto { display: none !important; }
+
+@media (max-width: 640px) {
+  .barra-superior nav a { margin-left: 12px; font-size: 13px; }
+  .contenedor { padding: 20px 16px 48px; }
+}

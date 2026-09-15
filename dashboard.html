@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Panel — Gestión Editorial RCIA-UADY</title>
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+<div class="barra-superior">
+  <div class="marca">
+    <img src="https://revista-fiq.github.io/P-gina-Web/Logo-dia.png" alt="Logo UADY FIQ">
+    RCIA-UADY · Gestión Editorial
+  </div>
+  <nav>
+    <span id="nombre-usuario"></span>
+    <a href="#" onclick="cerrarSesion(); return false;">Cerrar sesión</a>
+  </nav>
+</div>
+
+<div class="contenedor">
+  <h1 id="titulo-panel">Panel</h1>
+  <p class="subtitulo" id="subtitulo-panel"></p>
+
+  <!-- Vista AUTOR -->
+  <div id="vista-autor" class="oculto">
+    <a href="nuevo-manuscrito.html" class="boton" style="text-decoration:none; display:inline-block;">
+      + Enviar nuevo manuscrito
+    </a>
+    <h2>Mis manuscritos</h2>
+    <div id="lista-manuscritos-autor"><p class="vacio">Cargando…</p></div>
+  </div>
+
+  <!-- Vista REVISOR -->
+  <div id="vista-revisor" class="oculto">
+    <h2>Manuscritos asignados</h2>
+    <p class="subtitulo">Revisión ciega: la identidad de los autores no se muestra.</p>
+    <div id="lista-manuscritos-revisor"><p class="vacio">Cargando…</p></div>
+  </div>
+
+  <!-- Vista EDITOR -->
+  <div id="vista-editor" class="oculto">
+    <h2>Todos los manuscritos</h2>
+    <div id="lista-manuscritos-editor"><p class="vacio">Cargando…</p></div>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="js/supabase-client.js"></script>
+<script src="js/auth.js"></script>
+<script src="js/dashboard.js"></script>
+</body>
+</html>

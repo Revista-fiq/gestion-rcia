@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Acceso — Gestión Editorial RCIA-UADY</title>
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+<div class="barra-superior">
+  <div class="marca">
+    <img src="https://revista-fiq.github.io/P-gina-Web/Logo-dia.png" alt="Logo UADY FIQ">
+    RCIA-UADY · Gestión Editorial
+  </div>
+  <nav>
+    <a href="https://revista-fiq.github.io/P-gina-Web/">Sitio de la revista</a>
+  </nav>
+</div>
+
+<div class="contenedor" style="max-width: 420px;">
+  <h1>Acceso al sistema</h1>
+  <p class="subtitulo">Portal de autores, revisores y editores de RCIA-UADY.</p>
+
+  <div class="tarjeta">
+    <div id="aviso-login"></div>
+
+    <label for="email">Correo electrónico</label>
+    <input type="email" id="email" placeholder="tu@correo.com" autocomplete="email">
+
+    <label for="password">Contraseña</label>
+    <input type="password" id="password" placeholder="••••••••" autocomplete="current-password">
+
+    <button id="btn-login" style="width: 100%;">Iniciar sesión</button>
+    <button id="btn-registro" class="secundario" style="width: 100%;">Crear cuenta de autor</button>
+  </div>
+
+  <p class="subtitulo" style="text-align:center;">
+    ¿Problemas para acceder? Escribe a
+    <a href="mailto:revista.fiq@correo.uady.mx">revista.fiq@correo.uady.mx</a>
+  </p>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="js/supabase-client.js"></script>
+<script src="js/auth.js"></script>
+</body>
+</html>
