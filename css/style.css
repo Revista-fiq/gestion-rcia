@@ -200,6 +200,31 @@ button.secundario {
 .vacio { color: var(--gris-texto); font-size: 14px; padding: 24px 0; text-align: center; }
 .oculto { display: none !important; }
 
+.archivo-seleccionado {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: 6px;
+  font-size: 13px;
+  color: var(--gris-texto);
+}
+.archivo-seleccionado .nombre-archivo {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.btn-quitar-archivo {
+  flex-shrink: 0;
+  border: none;
+  background: none;
+  color: var(--rojo-error-borde);
+  text-decoration: underline;
+  font-size: 13px;
+  cursor: pointer;
+  padding: 0;
+}
+.btn-quitar-archivo:hover { color: #c0392b; }
+
 /* --- Checkboxes de áreas (registro / gestión de usuarios) --- */
 .areas-checkbox {
   display: grid;
