@@ -22,6 +22,42 @@ if (selectArea) {
   });
 }
 
+// Muestra el nombre del archivo elegido junto a un botón "Quitar" que
+// limpia el <input type="file">, para poder cambiar de opinión antes de
+// enviar sin depender del comportamiento nativo (poco visible) del navegador.
+function habilitarQuitarArchivo(inputId) {
+  const input = document.getElementById(inputId);
+  const contenedor = document.getElementById(`sel-${inputId}`);
+  if (!input || !contenedor) return;
+
+  input.addEventListener('change', () => {
+    const archivo = input.files[0];
+    if (!archivo) { contenedor.classList.add('oculto'); contenedor.innerHTML = ''; return; }
+    contenedor.classList.remove('oculto');
+    contenedor.innerHTML = '';
+
+    const nombre = document.createElement('span');
+    nombre.className = 'nombre-archivo';
+    nombre.textContent = archivo.name;
+
+    const boton = document.createElement('button');
+    boton.type = 'button';
+    boton.className = 'btn-quitar-archivo';
+    boton.textContent = 'Quitar';
+    boton.addEventListener('click', () => {
+      input.value = '';
+      contenedor.classList.add('oculto');
+      contenedor.innerHTML = '';
+    });
+
+    contenedor.appendChild(nombre);
+    contenedor.appendChild(boton);
+  });
+}
+
+['archivo_manuscrito', 'archivo_carta', 'archivo_conflictos', 'archivo_suplementario']
+  .forEach(habilitarQuitarArchivo);
+
 async function subirArchivo(bucket, userId, file) {
   if (!file) return null;
   const ruta = `${userId}/${Date.now()}_${sanitizarNombreArchivo(file.name)}`;
