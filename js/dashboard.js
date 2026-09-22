@@ -172,7 +172,7 @@ async function subirVersionCorregida(manuscriptId) {
   if (!session) { window.location.href = 'index.html'; return; }
 
   try {
-    const ruta = `${session.user.id}/${manuscriptId}/${Date.now()}_${file.name}`;
+    const ruta = `${session.user.id}/${manuscriptId}/${Date.now()}_${sanitizarNombreArchivo(file.name)}`;
     const { error: errUpload } = await db.storage.from(BUCKETS.manuscritos).upload(ruta, file);
     if (errUpload) throw new Error(errUpload.message);
 
@@ -340,7 +340,7 @@ async function subirAnonimizado(manuscriptId) {
   if (!file) { alert('Selecciona el archivo ya anonimizado (sin autores, afiliaciones ni agradecimientos).'); return; }
 
   try {
-    const ruta = `${manuscriptId}/${Date.now()}_${file.name}`;
+    const ruta = `${manuscriptId}/${Date.now()}_${sanitizarNombreArchivo(file.name)}`;
     const { error: errUpload } = await db.storage.from(BUCKETS.manuscritosAnonimizados).upload(ruta, file);
     if (errUpload) throw new Error(errUpload.message);
 

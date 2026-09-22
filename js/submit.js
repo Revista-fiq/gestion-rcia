@@ -24,7 +24,7 @@ if (selectArea) {
 
 async function subirArchivo(bucket, userId, file) {
   if (!file) return null;
-  const ruta = `${userId}/${Date.now()}_${file.name}`;
+  const ruta = `${userId}/${Date.now()}_${sanitizarNombreArchivo(file.name)}`;
   const { error } = await db.storage.from(bucket).upload(ruta, file);
   if (error) throw new Error(`Error al subir ${file.name}: ${error.message}`);
   const { data } = db.storage.from(bucket).getPublicUrl(ruta);

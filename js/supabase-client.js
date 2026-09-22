@@ -16,6 +16,19 @@ const BUCKETS = {
   suplementario: 'material-suplementario'
 };
 
+// Limpia un nombre de archivo antes de usarlo como parte de una ruta en
+// Storage: Supabase rechaza acentos y varios caracteres especiales en la
+// clave del objeto (error "Invalid key"). Quita acentos/diacríticos,
+// cambia espacios y símbolos por guiones, y conserva la extensión.
+function sanitizarNombreArchivo(nombre) {
+  const sinAcentos = nombre
+    .normalize('NFD')
+    .replace(/[̀-ͯ]/g, ''); // quita las marcas diacríticas (acentos, diéresis)
+  return sinAcentos
+    .replace(/[^a-zA-Z0-9.\-]+/g, '_') // todo lo que no sea letra/número/punto/guion → "_"
+    .replace(/_+/g, '_'); // colapsa guiones bajos repetidos
+}
+
 // Áreas temáticas oficiales de RCIA-UADY (alcance temático del sitio público)
 const AREAS_TEMATICAS = [
   'Ingeniería Química y Bioquímica',
