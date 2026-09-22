@@ -43,7 +43,12 @@
     </select>
 
     <label for="area">Área temática *</label>
-    <input type="text" id="area" placeholder="ej. Ciencia e Ingeniería de Alimentos">
+    <select id="area">
+      <option value="">Seleccionar área…</option>
+      <!-- opciones cargadas dinámicamente desde AREAS_TEMATICAS -->
+      <option value="__otra__">Otra (especificar)</option>
+    </select>
+    <input type="text" id="area_otra" placeholder="Especifica el área temática" class="oculto" style="margin-top:8px;">
 
     <label for="coautores">Coautores (opcional)</label>
     <textarea id="coautores" placeholder="Un coautor por línea: Nombre completo, ORCID, institución"></textarea>

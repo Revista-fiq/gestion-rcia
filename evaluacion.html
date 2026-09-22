@@ -1,0 +1,254 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>RCIA-UADY · Ficha de Evaluación</title>
+<meta name="theme-color" content="#0B2545">
+<style>
+  :root{
+    --navy:#0B2545;
+    --navy-soft:#16345F;
+    --gold:#C9A227;
+    --gold-soft:#E4CE86;
+    --paper:#FAF8F3;
+    --card:#FFFFFF;
+    --ink:#1E2A38;
+    --ink-muted:#5B6472;
+    --line:#E4DFD3;
+    --red:#B3261E;
+    --red-bg:#FBEAE9;
+    --amber:#8A5A00;
+    --amber-bg:#FCF1D9;
+    --teal:#0B5D5A;
+    --teal-bg:#E4F1F0;
+    --green:#245C3F;
+    --green-bg:#E6F0EA;
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0;
+    background:var(--paper);
+    color:var(--ink);
+    font-family:-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    -webkit-font-smoothing:antialiased;
+  }
+  .volver{
+    display:block;
+    background:var(--ink);
+    color:var(--paper);
+    text-decoration:none;
+    font-size:13px;
+    padding:12px 18px;
+  }
+  .volver:hover{ opacity:0.85; }
+  .folio{
+    max-width:760px;
+    margin:0 auto;
+    padding:28px 18px 80px;
+  }
+  header.card{
+    background:var(--navy);
+    color:var(--paper);
+    border-radius:2px;
+    padding:26px 26px 22px;
+    position:relative;
+    border:1px solid var(--navy-soft);
+  }
+  header.card::before{
+    content:"";
+    position:absolute; inset:6px;
+    border:1px solid rgba(228,206,134,0.35);
+    pointer-events:none;
+  }
+  .eyebrow{
+    font-size:11px;
+    letter-spacing:0.14em;
+    text-transform:uppercase;
+    color:var(--gold-soft);
+    margin:0 0 8px;
+  }
+  h1{
+    font-weight:600;
+    font-size:26px;
+    line-height:1.25;
+    margin:0 0 18px;
+  }
+  .folio-fields{ display:flex; gap:14px; flex-wrap:wrap; }
+  .folio-fields > div{ flex:1 1 220px; }
+  .folio-fields p{ margin:0; font-size:15px; }
+  label.field-label{
+    display:block;
+    font-size:11px;
+    letter-spacing:0.06em;
+    text-transform:uppercase;
+    color:var(--gold-soft);
+    margin-bottom:6px;
+    font-weight:600;
+  }
+  select, textarea{
+    width:100%;
+    font-family:inherit;
+    font-size:15px;
+    padding:10px 12px;
+    border-radius:3px;
+    border:1px solid var(--line);
+    background:var(--card);
+    color:var(--ink);
+  }
+  textarea{ resize:vertical; min-height:64px; line-height:1.45; }
+  select:focus, textarea:focus{
+    outline:none;
+    border-color:var(--gold);
+    box-shadow:0 0 0 3px rgba(201,162,39,0.18);
+  }
+
+  main{ margin-top:22px; }
+
+  .criterio{
+    background:var(--card);
+    border:1px solid var(--line);
+    border-top:3px solid transparent;
+    border-radius:2px;
+    padding:18px 20px 20px;
+    margin-bottom:16px;
+  }
+  .criterio.answered{ border-top-color:var(--gold); }
+  .criterio-head{
+    display:flex; justify-content:space-between; gap:16px; align-items:flex-start;
+    margin-bottom:12px;
+  }
+  .criterio-titulo{ font-weight:600; font-size:17px; margin:0 0 4px; }
+  .criterio-desc{ font-size:13px; color:var(--ink-muted); line-height:1.4; }
+  .criterio select{ max-width:210px; }
+  .criterio textarea{ margin-top:12px; }
+
+  .filtros{
+    background:var(--red-bg);
+    border:1px solid #ecc9c6;
+    border-left:4px solid var(--red);
+    border-radius:2px;
+    padding:16px 18px;
+    margin-bottom:22px;
+  }
+  .filtros h3{ margin:0 0 10px; font-size:16px; color:var(--red); }
+  .filtros label{ display:flex; gap:9px; align-items:flex-start; font-size:14px; margin-bottom:6px; cursor:pointer; }
+  .filtros input{ margin-top:3px; }
+
+  .confidencial{
+    background:var(--card);
+    border:1px dashed var(--line);
+    border-radius:2px;
+    padding:16px 18px;
+    margin-top:16px;
+  }
+  .confidencial label.field-label{ color:var(--ink-muted); }
+
+  .btn{
+    display:block; width:100%;
+    padding:15px; margin-top:24px;
+    font-weight:600; font-size:15px;
+    background:var(--navy); color:var(--paper);
+    border:none; border-radius:2px; cursor:pointer;
+  }
+  .btn:active{ background:var(--navy-soft); }
+  .btn[disabled]{ opacity:0.55; cursor:wait; }
+
+  #resultado{
+    display:none;
+    margin-top:22px;
+    padding:22px;
+    border-radius:2px;
+  }
+  #resultado .puntaje{ font-size:13px; letter-spacing:0.04em; }
+  #resultado .decision{ font-size:20px; font-weight:600; margin:6px 0 4px; }
+  #resultado .msg{ font-size:14px; }
+  .rechazo{ background:var(--red-bg); color:var(--red); border:1px solid #ecc9c6; }
+  .revision-mayor{ background:var(--amber-bg); color:var(--amber); border:1px solid #edd9a8; }
+  .revision-menor{ background:var(--teal-bg); color:var(--teal); border:1px solid #b9dbd8; }
+  .aceptar{ background:var(--green-bg); color:var(--green); border:1px solid #bcd9c8; }
+
+  #estadoEnvio{ font-size:13px; margin-top:10px; min-height:18px; color:var(--ink-muted); }
+  #estadoEnvio.error{ color:var(--red); }
+  #estadoEnvio.ok{ color:var(--green); }
+
+  footer{ text-align:center; color:var(--ink-muted); font-size:12px; margin-top:30px; }
+</style>
+</head>
+<body>
+
+<a href="dashboard.html" class="volver">← Volver al panel</a>
+
+<div class="folio">
+  <header class="card">
+    <p class="eyebrow">RCIA-UADY · Comité de Revisores</p>
+    <h1>Ficha de evaluación de manuscrito</h1>
+    <div class="folio-fields">
+      <div>
+        <label class="field-label">Manuscrito</label>
+        <p id="infoFolio">Cargando…</p>
+      </div>
+      <div>
+        <label class="field-label">Resumen</label>
+        <p id="infoResumen" style="font-size:13px; opacity:0.9;"></p>
+      </div>
+    </div>
+  </header>
+
+  <main id="fichaContenido" style="display:none;">
+    <div class="filtros">
+      <h3>🚨 Filtros éticos (bloqueantes)</h3>
+      <label><input type="checkbox" id="etica" checked> El estudio cumple con normativas éticas/bioéticas.</label>
+      <label><input type="checkbox" id="plagio" checked> El manuscrito tiene un nivel de similitud aceptable (original).</label>
+      <label><input type="checkbox" id="interes" checked> Los autores declaran no tener conflictos de interés.</label>
+    </div>
+
+    <div id="criterios"></div>
+
+    <div class="confidencial">
+      <label class="field-label">Comentarios confidenciales para el editor (opcional, el autor no los verá)</label>
+      <textarea id="comentarioConfidencial" placeholder="Notas privadas para el equipo editorial..."></textarea>
+    </div>
+
+    <div class="criterio">
+      <div class="criterio-head">
+        <div>
+          <p class="criterio-titulo">¿Este artículo necesitaría una segunda revisión?</p>
+          <span class="criterio-desc">En tu opinión como revisor, tras los cambios solicitados, ¿debería pasar por otra ronda de revisión antes de aceptarse?</span>
+        </div>
+        <select id="necesitaSegundaRevision">
+          <option value="">Seleccionar…</option>
+          <option value="Sí">Sí</option>
+          <option value="No">No</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="criterio">
+      <div class="criterio-head">
+        <div>
+          <p class="criterio-titulo">¿Estarías dispuesto a realizar esa segunda revisión?</p>
+          <span class="criterio-desc">Solo aplica si respondiste "Sí" a la pregunta anterior.</span>
+        </div>
+        <select id="dispuestoSegundaRevision">
+          <option value="">Seleccionar…</option>
+          <option value="Sí">Sí</option>
+          <option value="No">No</option>
+          <option value="No aplica">No aplica</option>
+        </select>
+      </div>
+    </div>
+
+    <button class="btn" id="btnEnviar">Generar recomendación y enviar</button>
+    <div id="estadoEnvio"></div>
+    <div id="resultado"></div>
+  </main>
+
+  <footer>RCIA-UADY · Esta evaluación queda registrada en el sistema de gestión editorial.</footer>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="js/supabase-client.js"></script>
+<script src="js/evaluacion.js"></script>
+</body>
+</html>

@@ -14,6 +14,7 @@
     RCIA-UADY · Gestión Editorial
   </div>
   <nav>
+    <a href="usuarios.html" id="nav-usuarios" class="oculto">Gestión de usuarios</a>
     <span id="nombre-usuario"></span>
     <a href="#" onclick="cerrarSesion(); return false;">Cerrar sesión</a>
   </nav>
@@ -39,9 +40,9 @@
     <div id="lista-manuscritos-revisor"><p class="vacio">Cargando…</p></div>
   </div>
 
-  <!-- Vista EDITOR -->
+  <!-- Vista EDITOR / EDITOR DE ÁREA (comparten la misma UI; RLS filtra por área automáticamente) -->
   <div id="vista-editor" class="oculto">
-    <h2>Todos los manuscritos</h2>
+    <h2 id="titulo-lista-editor">Todos los manuscritos</h2>
     <div id="lista-manuscritos-editor"><p class="vacio">Cargando…</p></div>
   </div>
 </div>
