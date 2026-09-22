@@ -200,6 +200,24 @@ button.secundario {
 .vacio { color: var(--gris-texto); font-size: 14px; padding: 24px 0; text-align: center; }
 .oculto { display: none !important; }
 
+/* --- Checkboxes de áreas (registro / gestión de usuarios) --- */
+.areas-checkbox {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 6px 16px;
+  margin-top: 6px;
+}
+.areas-checkbox label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  font-weight: 400;
+  margin: 0;
+  cursor: pointer;
+}
+.areas-checkbox input { width: auto; }
+
 @media (max-width: 640px) {
   .barra-superior nav a { margin-left: 12px; font-size: 13px; }
   .contenedor { padding: 20px 16px 48px; }
