@@ -1,8 +1,10 @@
 // =====================================================================
 // Autenticación
-// Nota: los registros nuevos entran siempre con rol 'autor'.
-// El editor asciende manualmente a alguien a 'revisor' o 'editor'
-// desde el panel (o directo en la tabla profiles).
+// Nota: los registros nuevos entran siempre con rol 'autor' — esto está
+// forzado también a nivel de base de datos (política RLS de INSERT en
+// `profiles`), así que aunque alguien manipule el formulario no puede
+// autoasignarse otro rol. Revisor / editor de área / editor se asignan
+// desde el panel "Gestión de usuarios" (solo visible para el editor).
 // =====================================================================
 
 function mostrarAviso(idContenedor, mensaje, tipo = 'info') {
@@ -12,9 +14,9 @@ function mostrarAviso(idContenedor, mensaje, tipo = 'info') {
 
 // Redirige al dashboard si ya hay una sesión activa.
 // Solo aplica en index.html (donde existe el formulario de login);
-// en dashboard.html y nuevo-manuscrito.html este archivo también se
-// carga (por el botón "Cerrar sesión"), así que ahí NO debe ejecutarse
-// o provoca un bucle de redirección hacia sí misma.
+// en las demás páginas este archivo también se carga (por el botón
+// "Cerrar sesión"), así que ahí NO debe ejecutarse o provoca un bucle
+// de redirección hacia sí misma.
 async function redirigirSiHaySesion() {
   if (!document.getElementById('btn-login')) return;
   const { data: { session } } = await db.auth.getSession();
@@ -51,20 +53,18 @@ document.getElementById('btn-registro')?.addEventListener('click', async () => {
   const nombre = prompt('Nombre completo (como aparecerá en tus manuscritos):');
   if (!nombre) return;
 
-  const { data, error } = await db.auth.signUp({ email, password });
+  // El perfil (rol "autor" por defecto, forzado también por RLS) lo crea
+  // automáticamente un trigger en la base de datos apenas se crea la
+  // cuenta — aquí solo mandamos el nombre como metadato para que el
+  // trigger lo use al crear esa fila.
+  const { error } = await db.auth.signUp({
+    email,
+    password,
+    options: { data: { nombre_completo: nombre } }
+  });
   if (error) {
     mostrarAviso('aviso-login', error.message, 'error');
     return;
-  }
-
-  // Crea el perfil asociado (rol autor por defecto)
-  if (data.user) {
-    await db.from('profiles').insert({
-      id: data.user.id,
-      role: 'autor',
-      nombre_completo: nombre,
-      email
-    });
   }
 
   mostrarAviso('aviso-login', 'Cuenta creada. Revisa tu correo para confirmar el registro.', 'ok');
