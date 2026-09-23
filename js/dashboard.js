@@ -289,6 +289,10 @@ async function cargarVistaEditor() {
   const { data: revisores } = await db.from('profiles').select('*').eq('role', 'revisor');
   const { data: editoresArea } = await db.from('profiles').select('*').eq('role', 'editor_area');
 
+  // Se guardan para armar el correo de aviso al asignar editor de área.
+  cacheManuscritos = Object.fromEntries(manuscritos.map(m => [m.id, m]));
+  cacheEditoresArea = editoresArea || [];
+
   cont.innerHTML = '';
   for (const m of manuscritos) {
     // Editores de área cuya área asignada coincide con la de este
@@ -404,6 +408,46 @@ async function asignarRevisor(manuscriptId) {
   alert('Revisor asignado.');
 }
 
+// Datos del último listado del panel editor (para armar el correo de aviso)
+let cacheManuscritos = {};
+let cacheEditoresArea = [];
+
+const URL_SISTEMA = 'https://revista-fiq.github.io/gestion-rcia/';
+
+// Aviso SEMIAUTOMÁTICO: abre el programa de correo del editor en jefe
+// con el mensaje ya redactado; él lo revisa y lo envía desde su cuenta.
+// (El envío 100% automático queda para la Fase 4, con Microsoft Graph.)
+function abrirCorreoAsignacionEditorArea(manuscrito, editor) {
+  const asunto = `RCIA-UADY · Asignación de manuscrito ${manuscrito.folio}`;
+  const cuerpo = [
+    `Estimado(a) ${editor.nombre_completo}:`,
+    '',
+    'Se le ha asignado como editor(a) de área responsable del siguiente manuscrito recibido por la Revista de Ciencia e Ingeniería Aplicada de la UADY (RCIA-UADY):',
+    '',
+    `Folio: ${manuscrito.folio}`,
+    `Título: ${manuscrito.titulo}`,
+    `Área temática: ${manuscrito.area_tematica}`,
+    '',
+    'Le solicitamos, por favor:',
+    '1. Revisar el manuscrito original y preparar la versión anonimizada (sin autores, afiliaciones, agradecimientos ni metadatos del archivo).',
+    '2. Subir el archivo anonimizado en el sistema de gestión editorial.',
+    '3. Dar seguimiento al proceso de revisión por pares.',
+    '',
+    `Puede ingresar al sistema con su cuenta en: ${URL_SISTEMA}`,
+    '',
+    'Muchas gracias por su apoyo.',
+    '',
+    'Atentamente,',
+    'Editor en jefe — RCIA-UADY'
+  ].join('\r\n');
+
+  const enlace = document.createElement('a');
+  enlace.href = `mailto:${encodeURIComponent(editor.email)}`
+    + `?subject=${encodeURIComponent(asunto)}`
+    + `&body=${encodeURIComponent(cuerpo)}`;
+  enlace.click();
+}
+
 async function asignarEditorArea(manuscriptId) {
   const select = document.getElementById(`sel-editorarea-${manuscriptId}`);
   const editorAreaId = select.value || null;
@@ -413,7 +457,22 @@ async function asignarEditorArea(manuscriptId) {
     .eq('id', manuscriptId);
 
   if (error) { alert('Error al asignar: ' + error.message); return; }
-  alert(editorAreaId ? 'Editor de área asignado.' : 'Asignación de editor de área quitada.');
+
+  if (!editorAreaId) {
+    alert('Asignación de editor de área quitada.');
+    cargarVistaEditor();
+    return;
+  }
+
+  const manuscrito = cacheManuscritos[manuscriptId];
+  const editor = cacheEditoresArea.find(e => e.id === editorAreaId);
+
+  if (manuscrito && editor?.email) {
+    abrirCorreoAsignacionEditorArea(manuscrito, editor);
+    alert(`Editor de área asignado. Se abrió tu programa de correo con el aviso para ${editor.nombre_completo} — revísalo y envíalo.`);
+  } else {
+    alert('Editor de área asignado. (No se encontró su correo para preparar el aviso; avísale por tu cuenta.)');
+  }
   cargarVistaEditor();
 }
 
