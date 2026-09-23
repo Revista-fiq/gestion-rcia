@@ -287,9 +287,15 @@ async function cargarVistaEditor() {
   if (!manuscritos.length) { cont.innerHTML = '<p class="vacio">Aún no se han recibido manuscritos.</p>'; return; }
 
   const { data: revisores } = await db.from('profiles').select('*').eq('role', 'revisor');
+  const { data: editoresArea } = await db.from('profiles').select('*').eq('role', 'editor_area');
 
   cont.innerHTML = '';
   for (const m of manuscritos) {
+    // Editores de área cuya área asignada coincide con la de este
+    // manuscrito (los demás igual pueden elegirse, pero se marcan aparte).
+    const editoresAreaLista = editoresArea || [];
+    const editorAreaActual = editoresAreaLista.find(e => e.id === m.editor_area_asignado_id);
+
     cont.insertAdjacentHTML('beforeend', `
       <div class="tarjeta">
         <div class="tarjeta-cabecera">
@@ -312,6 +318,19 @@ async function cargarVistaEditor() {
         }
         <input type="file" id="anon-${m.id}" accept=".doc,.docx,.pdf" style="margin-top:8px;">
         <button class="secundario" onclick="subirAnonimizado('${m.id}')">Subir / reemplazar anonimizado</button>
+
+        <label>Editor de área responsable de anonimizar/dar seguimiento${editorAreaActual ? ` — actual: ${editorAreaActual.nombre_completo}` : ''}</label>
+        <div style="display:flex; gap:8px;">
+          <select id="sel-editorarea-${m.id}" style="flex:1;">
+            <option value="">Sin asignar</option>
+            ${editoresAreaLista.map(e => `
+              <option value="${e.id}" ${m.editor_area_asignado_id === e.id ? 'selected' : ''}>
+                ${e.nombre_completo}${(e.areas_asignadas || []).includes(m.area_tematica) ? '' : ' (otra área)'}
+              </option>
+            `).join('') || '<option disabled>Sin editores de área registrados</option>'}
+          </select>
+          <button class="secundario" style="margin-top:0;" onclick="asignarEditorArea('${m.id}')">Asignar</button>
+        </div>
 
         <label>Cambiar estado</label>
         <select onchange="cambiarEstado('${m.id}', this.value, this)">
@@ -369,6 +388,19 @@ async function cambiarEstado(manuscriptId, nuevoEstado, selectEl) {
       : 'Error al actualizar: ' + error.message);
     cargarVistaEditor(); // recarga para que el <select> vuelva a mostrar el estado real
   }
+}
+
+async function asignarEditorArea(manuscriptId) {
+  const select = document.getElementById(`sel-editorarea-${manuscriptId}`);
+  const editorAreaId = select.value || null;
+
+  const { error } = await db.from('manuscripts')
+    .update({ editor_area_asignado_id: editorAreaId })
+    .eq('id', manuscriptId);
+
+  if (error) { alert('Error al asignar: ' + error.message); return; }
+  alert(editorAreaId ? 'Editor de área asignado.' : 'Asignación de editor de área quitada.');
+  cargarVistaEditor();
 }
 
 async function asignarRevisor(manuscriptId) {
