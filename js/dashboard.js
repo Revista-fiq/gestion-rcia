@@ -286,6 +286,7 @@ async function cargarVistaEditor() {
   if (error) { cont.innerHTML = `<div class="aviso aviso-error">Error al cargar: ${error.message}</div>`; return; }
   if (!manuscritos.length) { cont.innerHTML = '<p class="vacio">Aún no se han recibido manuscritos.</p>'; return; }
 
+  const { data: revisores } = await db.from('profiles').select('*').eq('role', 'revisor');
   const { data: editoresArea } = await db.from('profiles').select('*').eq('role', 'editor_area');
 
   cont.innerHTML = '';
@@ -338,6 +339,15 @@ async function cargarVistaEditor() {
           ).join('')}
         </select>
 
+        <label>Asignar revisor (opcional)</label>
+        <div style="display:flex; gap:8px;">
+          <select id="sel-revisor-${m.id}" style="flex:1;">
+            <option value="">Sin seleccionar</option>
+            ${revisores?.map(r => `<option value="${r.id}">${r.nombre_completo}</option>`).join('') || '<option disabled>Sin revisores registrados</option>'}
+          </select>
+          <button class="secundario" style="margin-top:0;" onclick="asignarRevisor('${m.id}')">Asignar</button>
+        </div>
+
         ${await renderVersiones(m.id)}
       </div>
     `);
@@ -379,6 +389,19 @@ async function cambiarEstado(manuscriptId, nuevoEstado, selectEl) {
       : 'Error al actualizar: ' + error.message);
     cargarVistaEditor(); // recarga para que el <select> vuelva a mostrar el estado real
   }
+}
+
+async function asignarRevisor(manuscriptId) {
+  const reviewerId = document.getElementById(`sel-revisor-${manuscriptId}`).value;
+  if (!reviewerId) { alert('Selecciona un revisor de la lista antes de asignar.'); return; }
+
+  const { error } = await db.from('review_assignments').insert({
+    manuscript_id: manuscriptId,
+    reviewer_id: reviewerId
+  });
+
+  if (error) { alert('Error al asignar: ' + error.message); return; }
+  alert('Revisor asignado.');
 }
 
 async function asignarEditorArea(manuscriptId) {
