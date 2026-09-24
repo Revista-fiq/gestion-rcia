@@ -170,7 +170,20 @@
 
   #estadoEnvio{ font-size:13px; margin-top:10px; min-height:18px; color:var(--ink-muted); }
   #estadoEnvio.error{ color:var(--red); }
-  #estadoEnvio.ok{ color:var(--green); }
+  #estadoEnvio.ok,
+  #fichaContenido > .aviso > p{
+    font-size:18px;
+    font-weight:600;
+    line-height:1.6;
+    color:var(--navy);
+    background:var(--amber-bg);
+    border:1px solid var(--gold-soft);
+    border-left:5px solid var(--gold);
+    border-radius:4px;
+    padding:18px 20px;
+    margin-top:18px;
+    overflow-wrap:anywhere;
+  }
 
   footer{ text-align:center; color:var(--ink-muted); font-size:12px; margin-top:30px; }
 @media(max-width:560px){.criterio-head{flex-direction:column}.criterio select{max-width:100%}}
