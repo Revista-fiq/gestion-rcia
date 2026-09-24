@@ -143,7 +143,7 @@ async function cargarVistaAutor(userId) {
         <div class="tarjeta-cabecera">
           <div>
             <div class="folio">${m.folio} · ${m.area_tematica}</div>
-            <div class="titulo-manuscrito">${m.titulo}</div>
+            <div class="titulo-manuscrito">${escaparHTML(m.titulo)}</div>
           </div>
           ${chipEstado(m.estado)}
         </div>
@@ -226,11 +226,7 @@ async function subirVersionCorregida(manuscriptId) {
 async function cargarVistaRevisor(userId) {
   const cont = document.getElementById('lista-manuscritos-revisor');
 
-  const { data: asignaciones, error } = await db
-    .from('review_assignments')
-    .select('*, manuscripts_blind(*)')
-    .eq('reviewer_id', userId)
-    .order('fecha_asignacion', { ascending: false });
+  const { data: asignaciones, error } = await db.rpc('rcia_mis_asignaciones');
 
   if (error) { cont.innerHTML = `<div class="aviso aviso-error">Error al cargar: ${error.message}</div>`; return; }
   if (!asignaciones.length) { cont.innerHTML = '<p class="vacio">No tienes manuscritos asignados por el momento.</p>'; return; }
@@ -247,20 +243,20 @@ async function cargarVistaRevisor(userId) {
       <div class="tarjeta">
         <div class="tarjeta-cabecera">
           <div>
-            <div class="folio">${m.folio}</div>
-            <div class="titulo-manuscrito">${m.titulo}</div>
+            <div class="folio">${escaparHTML(m.folio)}</div>
+            <div class="titulo-manuscrito">${escaparHTML(m.titulo)}</div>
           </div>
           <span class="estado estado-${a.estado === 'entregada' ? 'aceptado' : 'en_revision'}">
-            ${a.estado === 'entregada' ? 'Dictamen entregado' : 'Pendiente de dictamen'}
+            ${a.estado === 'entregada' ? 'Dictamen entregado' : a.estado === 'declinada' ? 'Asignación declinada' : 'Pendiente de dictamen'}
           </span>
         </div>
-        <p style="font-size:13px; color:var(--gris-texto);">${m.resumen || ''}</p>
+        <p style="font-size:13px; color:var(--gris-texto);">${escaparHTML(m.resumen || '')}</p>
         ${m.archivo_manuscrito_url
-          ? `<a href="${m.archivo_manuscrito_url}" target="_blank" class="boton secundario"
+          ? `<a href="${escaparHTML(m.archivo_manuscrito_url)}" target="_blank" rel="noopener noreferrer" class="boton secundario"
                style="text-decoration:none; display:inline-block;">Ver manuscrito (versión anonimizada)</a>`
           : `<span style="font-size:13px; color:var(--gris-texto);">El editor aún no ha subido la versión anonimizada.</span>`
         }
-        ${a.estado !== 'entregada' && m.archivo_manuscrito_url ? `
+        ${['pendiente', 'aceptada'].includes(a.estado) && m.archivo_manuscrito_url ? `
           <a href="evaluacion.html?a=${a.id}" class="boton"
              style="text-decoration:none; display:inline-block; margin-left:8px;">Capturar dictamen</a>
         ` : a.estado === 'entregada' ? `
@@ -286,7 +282,7 @@ async function cargarVistaEditor() {
   if (error) { cont.innerHTML = `<div class="aviso aviso-error">Error al cargar: ${error.message}</div>`; return; }
   if (!manuscritos.length) { cont.innerHTML = '<p class="vacio">Aún no se han recibido manuscritos.</p>'; return; }
 
-  const { data: revisores } = await db.from('profiles').select('*').eq('role', 'revisor');
+  const { data: revisores } = await db.from('profiles').select('*').eq('role', 'revisor').eq('activo', true);
   const { data: editoresArea } = await db.from('profiles').select('*').eq('role', 'editor_area');
 
   // Se guardan para armar el correo de aviso al asignar editor de área.
@@ -305,13 +301,13 @@ async function cargarVistaEditor() {
         <div class="tarjeta-cabecera">
           <div>
             <div class="folio">${m.folio} · ${m.profiles?.nombre_completo || 'Autor'} · ${m.area_tematica}</div>
-            <div class="titulo-manuscrito">${m.titulo}</div>
+            <div class="titulo-manuscrito">${escaparHTML(m.titulo)}</div>
           </div>
           ${chipEstado(m.estado)}
         </div>
 
         <label>Archivo original (con datos de autoría)</label>
-        <a href="${m.archivo_manuscrito_url}" target="_blank" class="boton secundario"
+        <a href="${escaparHTML(m.archivo_manuscrito_url)}" target="_blank" rel="noopener noreferrer" class="boton secundario"
            style="text-decoration:none; display:inline-block; margin-top:0;">Ver archivo original</a>
 
         <label>Manuscrito anonimizado (esto es lo único que ve el revisor)</label>
@@ -353,6 +349,7 @@ async function cargarVistaEditor() {
         </div>
 
         ${await renderVersiones(m.id)}
+        ${await renderDictamenes(m.id)}
       </div>
     `);
   }
@@ -364,7 +361,7 @@ async function subirAnonimizado(manuscriptId) {
   if (!file) { alert('Selecciona el archivo ya anonimizado (sin autores, afiliaciones ni agradecimientos).'); return; }
 
   try {
-    const ruta = `${manuscriptId}/${Date.now()}_${sanitizarNombreArchivo(file.name)}`;
+    const ruta = `${manuscriptId}/${Date.now()}_manuscrito-anonimo.${file.name.split(".").pop().toLowerCase()}`;
     const { error: errUpload } = await db.storage.from(BUCKETS.manuscritosAnonimizados).upload(ruta, file);
     if (errUpload) throw new Error(errUpload.message);
 
@@ -518,3 +515,20 @@ async function asignarEditorArea(manuscriptId) {
 }
 
 iniciarPanel();
+
+async function renderDictamenes(manuscriptId) {
+  const {data: asignaciones, error} = await db.from('review_assignments')
+    .select('id, estado, reviews(*)').eq('manuscript_id', manuscriptId);
+  if (error) return '<p>No se pudieron cargar los dictámenes.</p>';
+  if (!asignaciones?.length) return '<p>Sin revisores asignados.</p>';
+  return '<h3>Evaluaciones</h3>' + asignaciones.map((a, i) => {
+    const encabezado = `<p>Revisor ${i + 1}: ${escaparHTML(a.estado)}</p>`;
+    return encabezado + (a.reviews || []).map(r => `<details>
+      <summary>${escaparHTML(r.decision)} · ${r.puntaje_total ?? '—'}/32</summary>
+      ${(r.criterios || []).map(c => `<p><strong>${escaparHTML(c.titulo)}: ${escaparHTML(c.puntaje)}/4</strong><br>${escaparHTML(c.comentario)}</p>`).join('')}
+      <p><strong>Comentario privado al editor:</strong> ${escaparHTML(r.comentarios_editor || 'Sin comentarios')}</p>
+      <p>Segunda revisión: ${escaparHTML(r.necesita_segunda_revision || 'No aplica')}.
+      Disponibilidad: ${escaparHTML(r.dispuesto_segunda_revision || 'No aplica')}.</p>
+    </details>`).join('');
+  }).join('');
+}
