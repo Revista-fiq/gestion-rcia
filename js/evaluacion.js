@@ -56,7 +56,7 @@ async function iniciar() {
 
   if (asignacion.estado === 'entregada') {
     document.getElementById('fichaContenido').innerHTML =
-      '<div class="aviso" style="background:var(--green-bg); color:var(--green); border:1px solid #bcd9c8; padding:16px; border-radius:2px;">Ya enviaste tu evaluación para este manuscrito. Gracias por tu colaboración.</div>';
+      '<div class="aviso" style="background:var(--green-bg); color:var(--green); border:1px solid #bcd9c8; padding:16px; border-radius:2px;">Ya enviaste tu evaluación para este manuscrito. Gracias por tu colaboración.<p>Por favor, envía un correo al editor de área y al editor en jefe para informar que tu dictamen ya está disponible en el sistema. Incluye el folio del manuscrito en el asunto. El sistema todavía no envía este aviso por correo automáticamente.</p></div>';
     document.getElementById('fichaContenido').style.display = 'block';
     return;
   }
@@ -201,7 +201,7 @@ async function enviar(datos) {
   asignacionActual.estado = 'entregada';
   document.querySelectorAll('#fichaContenido input, #fichaContenido select, #fichaContenido textarea').forEach(el => el.disabled = true);
 
-  estado.textContent = '✓ Evaluación enviada y guardada. Puedes volver al panel.';
+  estado.textContent = '✓ Evaluación enviada y guardada. Por favor, envía un correo al editor de área y al editor en jefe para informar que tu dictamen ya está disponible en el sistema. Incluye el folio del manuscrito en el asunto. El sistema todavía no envía este aviso por correo automáticamente. Puedes volver al panel.';
   estado.className = 'ok';
   } catch (err) {
     estado.textContent = 'No se pudo confirmar el envío. Recarga el panel para comprobar si se guardó antes de reintentar.';
@@ -211,3 +211,5 @@ async function enviar(datos) {
 }
 
 iniciar().catch(() => { document.getElementById('infoFolio').textContent = 'No se pudo cargar la evaluación. Vuelve al panel e inténtalo de nuevo.'; });
+
+
