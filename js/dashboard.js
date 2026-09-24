@@ -2,6 +2,8 @@
 // Panel principal — enruta el contenido según profiles.role
 // =====================================================================
 
+let rolPanelActual = null;
+
 const ETIQUETAS_ESTADO = {
   recibido: 'Recibido',
   acuse_enviado: 'Acuse enviado',
@@ -37,6 +39,7 @@ async function iniciarPanel() {
     return;
   }
 
+  rolPanelActual = perfil.role;
   document.getElementById('nombre-usuario').textContent = perfil.nombre_completo;
 
   if (perfil.role === 'editor') {
@@ -271,6 +274,31 @@ async function cargarVistaRevisor(userId) {
 // VISTA EDITOR / EDITOR DE ÁREA
 // (RLS ya limita las filas devueltas al área del editor de área)
 // ---------------------------------------------------------------------
+
+// Presentación del responsable; los permisos de datos siguen en Supabase.
+function renderEditorAreaAsignado(m, editores, rol) {
+  const asignado = Boolean(m.editor_area_asignado_id);
+  const actual = editores.find(e => e.id === m.editor_area_asignado_id);
+  const nombre = actual ? escaparHTML(actual.nombre_completo) : asignado ? 'Asignado (nombre no disponible)' : 'Sin asignar';
+  const avisoArea = actual && !(actual.areas_asignadas || []).includes(m.area_tematica)
+    ? '<p style="margin:8px 0 0;">El área del manuscrito no figura entre las áreas de este editor. El editor responsable debe revisar sus áreas autorizadas.</p>' : '';
+  const estado = `<div class="aviso aviso-info" style="font-size:16px;"><strong>Editor de área asignado: ${nombre}</strong>${avisoArea}</div>`;
+  if (rol !== 'editor') return estado;
+  const opciones = editores.map(e => `<option value="${e.id}" ${e.id === m.editor_area_asignado_id ? 'selected' : ''}>${escaparHTML(e.nombre_completo)}${(e.areas_asignadas || []).includes(m.area_tematica) ? '' : ' (otra área)'}</option>`).join('');
+  return estado + `<details ${asignado ? '' : 'open'}>
+    <summary style="cursor:pointer;">${asignado ? 'Cambiar editor de área' : 'Asignar editor de área'}</summary>
+    <label for="sel-editorarea-${m.id}">Editor de área</label>
+    <div style="display:flex; flex-wrap:wrap; gap:8px;">
+      <select id="sel-editorarea-${m.id}" style="flex:1; min-width:180px;">
+        <option value="">Sin asignar</option>
+        ${asignado && !actual ? `<option value="${m.editor_area_asignado_id}" selected>Asignación actual (nombre no disponible)</option>` : ''}
+        ${opciones}
+      </select>
+      <button class="secundario" style="margin-top:0;" onclick="asignarEditorArea('${m.id}')">${asignado ? 'Guardar cambio' : 'Asignar'}</button>
+    </div>
+  </details>`;
+}
+
 async function cargarVistaEditor() {
   const cont = document.getElementById('lista-manuscritos-editor');
 
@@ -294,7 +322,6 @@ async function cargarVistaEditor() {
     // Editores de área cuya área asignada coincide con la de este
     // manuscrito (los demás igual pueden elegirse, pero se marcan aparte).
     const editoresAreaLista = editoresArea || [];
-    const editorAreaActual = editoresAreaLista.find(e => e.id === m.editor_area_asignado_id);
 
     cont.insertAdjacentHTML('beforeend', `
       <div class="tarjeta">
@@ -316,21 +343,12 @@ async function cargarVistaEditor() {
                style="text-decoration:none; display:inline-block; margin-top:0;">Ver archivo anonimizado</a>`
           : `<div class="aviso aviso-error" style="margin:6px 0;">Falta subir el archivo anonimizado — el manuscrito no podrá pasar a revisión hasta entonces.</div>`
         }
+        ${m.archivo_anonimizado_url ? '<p style="font-size:14px;">Versión anonimizada disponible. No es necesario volver a subirla si ya es correcta.</p><details><summary style="cursor:pointer;">Reemplazar versión anonimizada</summary>' : ''}
         <input type="file" id="anon-${m.id}" accept=".doc,.docx,.pdf" style="margin-top:8px;">
-        <button class="secundario" onclick="subirAnonimizado('${m.id}')">Subir / reemplazar anonimizado</button>
+        <button class="secundario" onclick="subirAnonimizado('${m.id}')">${m.archivo_anonimizado_url ? 'Guardar reemplazo anonimizado' : 'Subir versión anonimizada'}</button>
+        ${m.archivo_anonimizado_url ? '</details>' : ''}
 
-        <label>Editor de área responsable de anonimizar/dar seguimiento${editorAreaActual ? ` — actual: ${editorAreaActual.nombre_completo}` : ''}</label>
-        <div style="display:flex; gap:8px;">
-          <select id="sel-editorarea-${m.id}" style="flex:1;">
-            <option value="">Sin asignar</option>
-            ${editoresAreaLista.map(e => `
-              <option value="${e.id}" ${m.editor_area_asignado_id === e.id ? 'selected' : ''}>
-                ${e.nombre_completo}${(e.areas_asignadas || []).includes(m.area_tematica) ? '' : ' (otra área)'}
-              </option>
-            `).join('') || '<option disabled>Sin editores de área registrados</option>'}
-          </select>
-          <button class="secundario" style="margin-top:0;" onclick="asignarEditorArea('${m.id}')">Asignar</button>
-        </div>
+        ${renderEditorAreaAsignado(m, editoresAreaLista, rolPanelActual)}
 
         <label>Cambiar estado</label>
         <select onchange="cambiarEstado('${m.id}', this.value, this)">
@@ -487,8 +505,16 @@ function abrirCorreoAsignacionEditorArea(manuscrito, editor) {
 }
 
 async function asignarEditorArea(manuscriptId) {
+  if (rolPanelActual !== 'editor') {
+    alert('Solicita el cambio de editor de área al editor responsable.');
+    return;
+  }
   const select = document.getElementById(`sel-editorarea-${manuscriptId}`);
   const editorAreaId = select.value || null;
+  if (editorAreaId === (cacheManuscritos[manuscriptId]?.editor_area_asignado_id || null)) {
+    alert('Este editor de área ya está asignado. No hay cambios que guardar.');
+    return;
+  }
 
   const { error } = await db.from('manuscripts')
     .update({ editor_area_asignado_id: editorAreaId })
@@ -532,3 +558,5 @@ async function renderDictamenes(manuscriptId) {
     </details>`).join('');
   }).join('');
 }
+
+
