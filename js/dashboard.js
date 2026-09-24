@@ -3,6 +3,7 @@
 // =====================================================================
 
 let rolPanelActual = null;
+const asignacionesEnCurso = new Set();
 
 const ETIQUETAS_ESTADO = {
   recibido: 'Recibido',
@@ -312,6 +313,12 @@ async function cargarVistaEditor() {
 
   const { data: revisores } = await db.from('profiles').select('*').eq('role', 'revisor').eq('activo', true);
   const { data: editoresArea } = await db.from('profiles').select('*').eq('role', 'editor_area');
+  const { data: asignaciones, error: errorAsignaciones } = await db.from('review_assignments')
+    .select('manuscript_id, reviewer_id, estado');
+  if (errorAsignaciones) {
+    cont.textContent = 'No se pudieron comprobar las asignaciones. Recarga el panel antes de asignar revisores.';
+    return;
+  }
 
   // Se guardan para armar el correo de aviso al asignar editor de área.
   cacheManuscritos = Object.fromEntries(manuscritos.map(m => [m.id, m]));
@@ -322,6 +329,8 @@ async function cargarVistaEditor() {
     // Editores de área cuya área asignada coincide con la de este
     // manuscrito (los demás igual pueden elegirse, pero se marcan aparte).
     const editoresAreaLista = editoresArea || [];
+    const asignados = asignaciones.filter(a => a.manuscript_id === m.id);
+    const disponibles = (revisores || []).filter(r => !asignados.some(a => a.reviewer_id === r.id));
 
     cont.insertAdjacentHTML('beforeend', `
       <div class="tarjeta">
@@ -357,11 +366,18 @@ async function cargarVistaEditor() {
           ).join('')}
         </select>
 
-        <label>Asignar revisor (opcional)</label>
+        <label>Revisores asignados</label>
+        <ul>${asignados.map(a => {
+          const r = (revisores || []).find(r => r.id === a.reviewer_id);
+          const nombre = r ? r.nombre_completo + ' (' + r.email + ')' : 'Revisor registrado';
+          const estado = {pendiente:'Pendiente de dictamen',aceptada:'Asignación aceptada',entregada:'Dictamen entregado',declinada:'Asignación declinada'}[a.estado] || a.estado;
+          return '<li>' + escaparHTML(nombre) + ' — ' + escaparHTML(estado) + '</li>';
+        }).join('') || '<li>Aún no hay revisores asignados.</li>'}</ul>
+        <label>Asignar otro revisor</label>
         <div style="display:flex; gap:8px;">
           <select id="sel-revisor-${m.id}" style="flex:1;">
             <option value="">Sin seleccionar</option>
-            ${revisores?.map(r => `<option value="${r.id}">${r.nombre_completo}</option>`).join('') || '<option disabled>Sin revisores registrados</option>'}
+            ${disponibles.map(r => `<option value="${r.id}">${escaparHTML(r.nombre_completo)} (${escaparHTML(r.email)})</option>`).join('') || '<option value="" disabled>No hay otros revisores disponibles</option>'}
           </select>
           <button class="secundario" style="margin-top:0;" onclick="asignarRevisor('${m.id}')">Asignar</button>
         </div>
@@ -413,14 +429,37 @@ async function cambiarEstado(manuscriptId, nuevoEstado, selectEl) {
 async function asignarRevisor(manuscriptId) {
   const reviewerId = document.getElementById(`sel-revisor-${manuscriptId}`).value;
   if (!reviewerId) { alert('Selecciona un revisor de la lista antes de asignar.'); return; }
-
-  const { error } = await db.from('review_assignments').insert({
-    manuscript_id: manuscriptId,
-    reviewer_id: reviewerId
-  });
-
-  if (error) { alert('Error al asignar: ' + error.message); return; }
-  alert('Revisor asignado.');
+  if (asignacionesEnCurso.has(manuscriptId)) return;
+  asignacionesEnCurso.add(manuscriptId);
+  try {
+    const { error } = await db.from('review_assignments').insert({
+      manuscript_id: manuscriptId,
+      reviewer_id: reviewerId
+    });
+    if (error) {
+      if (error.code === '23505') {
+        const { data: existente } = await db.from('review_assignments')
+          .select('estado').eq('manuscript_id', manuscriptId).eq('reviewer_id', reviewerId).maybeSingle();
+        const mensajes = {
+          entregada: 'Este revisor ya entregó su dictamen. No se puede crear otra evaluación para la misma cuenta y manuscrito; la segunda ronda aún no está habilitada.',
+          declinada: 'Esta cuenta ya tiene una asignación declinada. Solicita al editor responsable revisar esa asignación.',
+          pendiente: 'Este revisor ya está asignado. Puede entrar con su cuenta y abrir el manuscrito desde su panel.',
+          aceptada: 'Este revisor ya aceptó la asignación. Puede continuar la evaluación desde su panel.'
+        };
+        alert(mensajes[existente?.estado] || 'Esta cuenta ya está asignada a este manuscrito. Revisa la lista de revisores asignados.');
+        await cargarVistaEditor();
+        return;
+      }
+      alert('Error al asignar: ' + error.message);
+      return;
+    }
+    alert('Revisor asignado.');
+    await cargarVistaEditor();
+  } catch {
+    alert('No se pudo confirmar la asignación. Recarga el panel para comprobar si se guardó antes de reintentar.');
+  } finally {
+    asignacionesEnCurso.delete(manuscriptId);
+  }
 }
 
 // Datos del último listado del panel editor (para armar el correo de aviso)
