@@ -3,6 +3,8 @@
 // =====================================================================
 
 let rolPanelActual = null;
+let usuarioPanelActual = null;
+let revisoresPanelActual = [];
 const asignacionesEnCurso = new Set();
 
 const ETIQUETAS_ESTADO = {
@@ -29,6 +31,15 @@ async function iniciarPanel() {
   const { data: { session } } = await db.auth.getSession();
   if (!session) { window.location.href = 'index.html'; return; }
 
+  usuarioPanelActual = session.user.id;
+  // Las pestañas de un mismo perfil comparten sesión.
+  db.auth.onAuthStateChange((_evento, nuevaSesion) => {
+    if ((nuevaSesion?.user?.id || null) !== usuarioPanelActual) {
+      document.querySelector('.contenedor').textContent = 'La cuenta activa cambió. Actualizando el panel…';
+      window.location.replace(nuevaSesion ? 'dashboard.html' : 'index.html');
+    }
+  });
+
   const { data: perfil, error } = await db
     .from('profiles')
     .select('*')
@@ -41,7 +52,7 @@ async function iniciarPanel() {
   }
 
   rolPanelActual = perfil.role;
-  document.getElementById('nombre-usuario').textContent = perfil.nombre_completo;
+  document.getElementById('nombre-usuario').textContent = perfil.nombre_completo + ' · ' + session.user.email;
 
   if (perfil.role === 'editor') {
     document.getElementById('nav-usuarios').classList.remove('oculto');
@@ -323,6 +334,7 @@ async function cargarVistaEditor() {
   // Se guardan para armar el correo de aviso al asignar editor de área.
   cacheManuscritos = Object.fromEntries(manuscritos.map(m => [m.id, m]));
   cacheEditoresArea = editoresArea || [];
+  revisoresPanelActual = revisores || [];
 
   cont.innerHTML = '';
   for (const m of manuscritos) {
@@ -432,6 +444,19 @@ async function asignarRevisor(manuscriptId) {
   if (asignacionesEnCurso.has(manuscriptId)) return;
   asignacionesEnCurso.add(manuscriptId);
   try {
+    const { data: identidad, error: errorIdentidad } = await db.auth.getUser();
+    if (errorIdentidad || identidad?.user?.id !== usuarioPanelActual) {
+      alert('La cuenta activa cambió. Recarga el panel e inicia sesión como editor antes de asignar.');
+      return;
+    }
+    const manuscrito = cacheManuscritos[manuscriptId];
+    const revisor = revisoresPanelActual.find(r => r.id === reviewerId);
+    if (!manuscrito || !revisor || !['editor', 'editor_area'].includes(rolPanelActual)) {
+      alert('No se pudo comprobar el manuscrito y el revisor. Recarga el panel.');
+      return;
+    }
+    if (!confirm('Confirma la asignación:\n\nFolio: ' + manuscrito.folio + '\nTítulo: ' + manuscrito.titulo +
+      '\nRevisor: ' + revisor.nombre_completo + '\nCorreo: ' + revisor.email)) return;
     const { error } = await db.from('review_assignments').insert({
       manuscript_id: manuscriptId,
       reviewer_id: reviewerId
