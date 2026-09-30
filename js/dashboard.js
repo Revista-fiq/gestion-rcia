@@ -5,6 +5,8 @@
 let rolPanelActual = null;
 let usuarioPanelActual = null;
 let revisoresPanelActual = [];
+let exclusionesPanel = [];
+let exclusionesDisponibles = false;
 const asignacionesEnCurso = new Set();
 
 const ETIQUETAS_ESTADO = {
@@ -331,6 +333,11 @@ async function cargarVistaEditor() {
     return;
   }
 
+  if (rolPanelActual === 'editor') {
+    const resultado = await db.from('manuscript_exclusions').select('manuscript_id,user_id');
+    exclusionesDisponibles = !resultado.error;
+    exclusionesPanel = resultado.data || [];
+  }
   // Se guardan para armar el correo de aviso al asignar editor de área.
   cacheManuscritos = Object.fromEntries(manuscritos.map(m => [m.id, m]));
   cacheEditoresArea = editoresArea || [];
@@ -340,7 +347,7 @@ async function cargarVistaEditor() {
   for (const m of manuscritos) {
     // Editores de área cuya área asignada coincide con la de este
     // manuscrito (los demás igual pueden elegirse, pero se marcan aparte).
-    const editoresAreaLista = editoresArea || [];
+    const editoresAreaLista = (editoresArea || []).filter(e => !exclusionesPanel.some(x => x.manuscript_id === m.id && x.user_id === e.id));
     const asignados = asignaciones.filter(a => a.manuscript_id === m.id);
     const disponibles = (revisores || []).filter(r => !asignados.some(a => a.reviewer_id === r.id));
 
@@ -370,6 +377,7 @@ async function cargarVistaEditor() {
         ${m.archivo_anonimizado_url ? '</details>' : ''}
 
         ${renderEditorAreaAsignado(m, editoresAreaLista, rolPanelActual)}
+        ${renderConflictos(m, editoresArea || [])}
 
         <label>Cambiar estado</label>
         <select onchange="cambiarEstado('${m.id}', this.value, this)">
@@ -624,3 +632,41 @@ async function renderDictamenes(manuscriptId) {
 }
 
 
+
+
+function renderConflictos(m, editores) {
+  if (rolPanelActual !== 'editor') return '';
+  if (!exclusionesDisponibles) return '<p class="aviso aviso-error">El control de conflictos de interés no está disponible. Comprueba que se ejecutó schema_fase7_conflictos.sql en Supabase. No se ha aplicado ningún bloqueo desde este panel.</p>';
+  const bloqueados = exclusionesPanel.filter(x => x.manuscript_id === m.id);
+  const etiqueta = id => {
+    const e = editores.find(e => e.id === id);
+    return e ? e.nombre_completo + ' (' + e.email + ')' : 'Cuenta excluida: ' + id;
+  };
+  return `<details style="margin:16px 0;padding:14px;border:1px solid #cbd5e1;border-radius:8px;">
+    <summary><strong>Conflictos de interés (${bloqueados.length} cuentas excluidas)</strong></summary>
+    <p>Si un editor es autor o tiene otro conflicto, selecciona su cuenta editorial para impedirle consultar este manuscrito, archivos y dictámenes. Su cuenta separada de autor conserva el seguimiento de su envío.</p>
+    <ul>${bloqueados.map(x => `<li>${escaparHTML(etiqueta(x.user_id))} <button type="button" class="secundario" onclick="guardarConflicto('${m.id}','${x.user_id}',false)">Retirar exclusión</button></li>`).join('') || '<li>No hay exclusiones registradas.</li>'}</ul>
+    <label for="conflicto-${m.id}">Cuenta editorial que debe quedar excluida</label>
+    <select id="conflicto-${m.id}"><option value="">Selecciona una cuenta</option>${editores.filter(e => !bloqueados.some(x => x.user_id === e.id)).map(e => `<option value="${e.id}">${escaparHTML(etiqueta(e.id))}</option>`).join('')}</select>
+    <button type="button" class="secundario" onclick="guardarConflicto('${m.id}',null,true)">Bloquear acceso a este manuscrito</button>
+  </details>`;
+}
+const conflictosEnCurso = new Set();
+async function guardarConflicto(mid, uid, bloquear) {
+  if (rolPanelActual !== 'editor' || conflictosEnCurso.has(mid)) return;
+  uid = uid || document.getElementById('conflicto-' + mid)?.value;
+  if (!uid) { alert('Selecciona la cuenta editorial que debe quedar excluida.'); return; }
+  const m = cacheManuscritos[mid];
+  const e = cacheEditoresArea.find(e => e.id === uid);
+  if (!m || !confirm(`${bloquear ? 'Bloquear' : 'Restablecer'} el acceso de ${e?.email || uid} a ${m.folio}: ${m.titulo}?${bloquear ? '\nSi estaba asignado como editor de este envío, se retirará esa asignación.' : '\nSe restaurarán sus permisos habituales, sin reasignarlo automáticamente.'}`)) return;
+  conflictosEnCurso.add(mid);
+  try {
+    const {data, error: sesionError} = await db.auth.getUser();
+    if (sesionError || data.user?.id !== usuarioPanelActual) throw new Error('La cuenta activa cambió. Recarga el panel.');
+    const {error} = await db.rpc('rcia_guardar_exclusion', {mid, uid, bloquear});
+    if (error) throw error;
+    await cargarVistaEditor();
+    alert(bloquear ? 'Exclusión guardada. Los enlaces temporales ya emitidos pueden seguir funcionando hasta 60 segundos; los archivos previamente descargados no se pueden retirar.' : 'Exclusión retirada.');
+  } catch (error) { alert('No se pudo cambiar la exclusión: ' + error.message); }
+  finally { conflictosEnCurso.delete(mid); }
+}
