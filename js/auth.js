@@ -57,7 +57,7 @@ document.getElementById('btn-registro')?.addEventListener('click', async () => {
   // automáticamente un trigger en la base de datos apenas se crea la
   // cuenta — aquí solo mandamos el nombre como metadato para que el
   // trigger lo use al crear esa fila.
-  const { error } = await db.auth.signUp({
+  const { data, error } = await db.auth.signUp({
     email,
     password,
     options: { data: { nombre_completo: nombre } }
@@ -67,7 +67,11 @@ document.getElementById('btn-registro')?.addEventListener('click', async () => {
     return;
   }
 
-  mostrarAviso('aviso-login', 'Cuenta creada. Revisa tu correo para confirmar el registro.', 'ok');
+  if (data.session) {
+    window.location.href = 'dashboard.html';
+  } else {
+    mostrarAviso('aviso-login', 'Revisa tu correo y la carpeta de correo no deseado para completar el registro. Si ya tenías cuenta, utiliza Iniciar sesión.', 'ok');
+  }
 });
 
 async function cerrarSesion() {
