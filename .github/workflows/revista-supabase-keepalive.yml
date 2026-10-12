@@ -1,0 +1,35 @@
+# Mantiene activo el proyecto Supabase de la Revista FIQ (plan gratuito)
+# Cuenta Supabase: revista.fiq@correo.uady.mx
+# Ubicación en el repositorio: .github/workflows/revista-supabase-keepalive.yml
+#
+# Requisitos (Settings > Secrets and variables > Actions):
+#   Secret   REVISTA_SUPABASE_URL       -> Project URL (ej. https://xxxxxxxx.supabase.co)
+#   Secret   REVISTA_SUPABASE_ANON_KEY  -> clave "anon public" del proyecto
+#   Variable REVISTA_SUPABASE_TABLE     -> nombre de una tabla existente (ej. articulos)
+
+name: Revista Supabase keep-alive
+
+on:
+  schedule:
+    - cron: "43 15 */3 * *"   # cada 3 días, 09:43 hora de Mérida
+  workflow_dispatch:          # permite ejecutarlo manualmente para probar
+
+jobs:
+  ping:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Consulta mínima a la base de datos de la revista
+        env:
+          SUPABASE_URL: ${{ secrets.REVISTA_SUPABASE_URL }}
+          SUPABASE_ANON_KEY: ${{ secrets.REVISTA_SUPABASE_ANON_KEY }}
+          TABLE: ${{ vars.REVISTA_SUPABASE_TABLE }}
+        run: |
+          status=$(curl -s -o /dev/null -w "%{http_code}" \
+            "$SUPABASE_URL/rest/v1/$TABLE?select=*&limit=1" \
+            -H "apikey: $SUPABASE_ANON_KEY" \
+            -H "Authorization: Bearer $SUPABASE_ANON_KEY")
+          echo "Respuesta HTTP: $status"
+          if [ "$status" != "200" ]; then
+            echo "El ping falló. Revise si el proyecto está pausado o si la tabla existe."
+            exit 1
+          fi
