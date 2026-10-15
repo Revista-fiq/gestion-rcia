@@ -13,7 +13,8 @@ const BUCKETS = {
   manuscritosAnonimizados: 'manuscritos-anonimizados',
   cartas: 'cartas-presentacion',
   conflictos: 'declaraciones-conflicto',
-  suplementario: 'material-suplementario'
+  suplementario: 'material-suplementario',
+  antecedentes: 'antecedentes-editoriales'
 };
 
 // Limpia un nombre de archivo antes de usarlo como parte de una ruta en
