@@ -338,7 +338,7 @@ async function cargarVistaEditor() {
     exclusionesDisponibles = !resultado.error;
     exclusionesPanel = resultado.data || [];
   }
-  // Se guardan para armar el correo de aviso al asignar editor de área.
+  // Se guardan para consultar las asignaciones y los conflictos al asignar editor de área.
   cacheManuscritos = Object.fromEntries(manuscritos.map(m => [m.id, m]));
   cacheEditoresArea = editoresArea || [];
   revisoresPanelActual = revisores || [];
@@ -486,7 +486,7 @@ async function asignarRevisor(manuscriptId) {
       alert('Error al asignar: ' + error.message);
       return;
     }
-    alert('Revisor asignado.');
+    alert('Revisor asignado. El sistema genera automáticamente el aviso por correo; el envío puede tardar unos minutos.');
     await cargarVistaEditor();
   } catch {
     alert('No se pudo confirmar la asignación. Recarga el panel para comprobar si se guardó antes de reintentar.');
@@ -495,86 +495,9 @@ async function asignarRevisor(manuscriptId) {
   }
 }
 
-// Datos del último listado del panel editor (para armar el correo de aviso)
+// Datos del último listado del panel editor (para consultar las asignaciones y los conflictos)
 let cacheManuscritos = {};
 let cacheEditoresArea = [];
-
-const URL_SISTEMA = 'https://revista-fiq.github.io/gestion-rcia/';
-
-// Aviso SEMIAUTOMÁTICO: muestra una ventana con el correo ya redactado y
-// botones para abrirlo en Outlook web (Microsoft 365 UADY), en la app de
-// correo del equipo (mailto) o copiarlo. Son enlaces que el usuario
-// presiona directamente, así no dependen de que Windows tenga una app de
-// correo predeterminada ni los bloquea el navegador.
-// (El envío 100% automático queda para la Fase 4, con Microsoft Graph.)
-function abrirCorreoAsignacionEditorArea(manuscrito, editor) {
-  const asunto = `RCIA-UADY · Asignación de manuscrito ${manuscrito.folio}`;
-  const cuerpo = [
-    `Estimado(a) ${editor.nombre_completo}:`,
-    '',
-    'Se le ha asignado como editor(a) de área responsable del siguiente manuscrito recibido por la Revista de Ciencia e Ingeniería Aplicada de la UADY (RCIA-UADY):',
-    '',
-    `Folio: ${manuscrito.folio}`,
-    `Título: ${manuscrito.titulo}`,
-    `Área temática: ${manuscrito.area_tematica}`,
-    '',
-    'Le solicitamos, por favor:',
-    '1. Revisar el manuscrito original y preparar la versión anonimizada (sin autores, afiliaciones, agradecimientos ni metadatos del archivo).',
-    '2. Subir el archivo anonimizado en el sistema de gestión editorial.',
-    '3. Dar seguimiento al proceso de revisión por pares.',
-    '',
-    `Puede ingresar al sistema con su cuenta en: ${URL_SISTEMA}`,
-    '',
-    'Muchas gracias por su apoyo.',
-    '',
-    'Atentamente,',
-    'Editor en jefe — RCIA-UADY'
-  ].join('\n');
-
-  const para = encodeURIComponent(editor.email);
-  const asuntoUrl = encodeURIComponent(asunto);
-  const cuerpoUrl = encodeURIComponent(cuerpo);
-  const urlOutlookWeb = `https://outlook.office.com/mail/deeplink/compose?to=${para}&subject=${asuntoUrl}&body=${cuerpoUrl}`;
-  const urlMailto = `mailto:${para}?subject=${asuntoUrl}&body=${cuerpoUrl}`;
-
-  document.getElementById('modal-correo')?.remove();
-  const fondo = document.createElement('div');
-  fondo.id = 'modal-correo';
-  fondo.style.cssText = 'position:fixed; inset:0; background:rgba(0,0,0,.45); display:flex; align-items:center; justify-content:center; z-index:1000; padding:16px;';
-  fondo.innerHTML = `
-    <div style="background:#fff; border-radius:10px; max-width:640px; width:100%; max-height:90vh; overflow:auto; padding:20px;">
-      <h3 style="margin-top:0;">Aviso para ${editor.nombre_completo}</h3>
-      <p style="font-size:13px; margin:4px 0;"><strong>Para:</strong> ${editor.email}</p>
-      <p style="font-size:13px; margin:4px 0 10px;"><strong>Asunto:</strong> ${asunto}</p>
-      <textarea id="modal-correo-texto" readonly
-        style="width:100%; height:240px; font-size:13px; box-sizing:border-box;"></textarea>
-      <div style="display:flex; flex-wrap:wrap; gap:8px; margin-top:12px;">
-        <a class="boton" href="${urlOutlookWeb}" target="_blank" rel="noopener"
-           style="text-decoration:none; display:inline-block; margin-top:0;">Abrir en Outlook web</a>
-        <a class="boton secundario" href="${urlMailto}"
-           style="text-decoration:none; display:inline-block; margin-top:0;">Abrir en app de correo</a>
-        <button type="button" class="secundario" style="margin-top:0;" id="modal-correo-copiar">Copiar texto</button>
-        <button type="button" class="secundario" style="margin-top:0;" id="modal-correo-cerrar">Cerrar</button>
-      </div>
-    </div>
-  `;
-  document.body.appendChild(fondo);
-  document.getElementById('modal-correo-texto').value = cuerpo;
-
-  document.getElementById('modal-correo-copiar').addEventListener('click', async () => {
-    const texto = `Para: ${editor.email}\nAsunto: ${asunto}\n\n${cuerpo}`;
-    try {
-      await navigator.clipboard.writeText(texto);
-      document.getElementById('modal-correo-copiar').textContent = 'Copiado ✓';
-    } catch {
-      const area = document.getElementById('modal-correo-texto');
-      area.select();
-      document.execCommand('copy');
-      document.getElementById('modal-correo-copiar').textContent = 'Copiado ✓';
-    }
-  });
-  document.getElementById('modal-correo-cerrar').addEventListener('click', () => fondo.remove());
-}
 
 async function asignarEditorArea(manuscriptId) {
   if (rolPanelActual !== 'editor') {
@@ -600,16 +523,8 @@ async function asignarEditorArea(manuscriptId) {
     return;
   }
 
-  const manuscrito = cacheManuscritos[manuscriptId];
-  const editor = cacheEditoresArea.find(e => e.id === editorAreaId);
-
   await cargarVistaEditor();
-
-  if (manuscrito && editor?.email) {
-    abrirCorreoAsignacionEditorArea(manuscrito, editor);
-  } else {
-    alert('Editor de área asignado. (No se encontró su correo para preparar el aviso; avísale por tu cuenta.)');
-  }
+  alert('Editor de área asignado. El sistema genera automáticamente el aviso por correo; el envío puede tardar unos minutos.');
 }
 
 iniciarPanel();
