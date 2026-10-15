@@ -138,7 +138,7 @@ document.getElementById('btn-enviar')?.addEventListener('click', async () => {
       notas: 'Envío original.'
     });
 
-    mostrarAviso(aviso, 'Manuscrito enviado. Recibirás tu folio y acuse por correo en un máximo de 5 días hábiles.', 'ok');
+    mostrarAviso(aviso, 'Manuscrito registrado. Consulta el folio y seguimiento en tu panel. El sistema genera automáticamente el acuse por correo y el aviso al editor responsable; el envío puede tardar unos minutos. Revisa también el correo no deseado.', 'ok');
     setTimeout(() => window.location.href = 'dashboard.html', 2000);
 
   } catch (err) {
