@@ -247,3 +247,24 @@ button.secundario {
   .barra-superior nav a { margin-left: 12px; font-size: 13px; }
   .contenedor { padding: 20px 16px 48px; }
 }
+
+/* Separación visible de cada expediente en las tres vistas del panel. */
+:is(#lista-manuscritos-editor, #lista-manuscritos-autor, #lista-manuscritos-revisor) > .tarjeta {
+  border: 2px solid #b9c7d6;
+  border-top: 7px solid #16345f;
+  margin: 0 0 40px;
+  box-shadow: 0 3px 10px rgba(11,37,69,.08);
+}
+:is(#lista-manuscritos-editor, #lista-manuscritos-autor, #lista-manuscritos-revisor) > .tarjeta > .tarjeta-cabecera {
+  background: #eef4fb;
+  padding: 16px;
+  margin: -20px -20px 22px;
+  border-bottom: 2px solid #b9c7d6;
+  border-radius: 3px 3px 0 0;
+}
+.tarjeta-cabecera > div { min-width: 0; }
+.tarjeta-cabecera .folio { font-size: 15px; font-weight: 700; color: #16345f; overflow-wrap: anywhere; }
+.tarjeta-cabecera .titulo-manuscrito { font-size: 18px; line-height: 1.45; overflow-wrap: anywhere; }
+@media (max-width: 640px) {
+  .tarjeta-cabecera { flex-direction: column; }
+}
