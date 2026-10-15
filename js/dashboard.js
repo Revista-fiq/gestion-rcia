@@ -173,6 +173,7 @@ async function cargarVistaAutor(userId) {
             </div>
           `).join('')}
         </div>
+        ${await renderAntecedentes(m)}
         ${await renderVersiones(m.id)}
         ${bloqueCorreccion}
       </div>
@@ -264,7 +265,7 @@ async function cargarVistaRevisor(userId) {
             <div class="titulo-manuscrito">${escaparHTML(m.titulo)}</div>
           </div>
           <span class="estado estado-${a.estado === 'entregada' ? 'aceptado' : 'en_revision'}">
-            ${a.estado === 'entregada' ? 'Dictamen entregado' : a.estado === 'declinada' ? 'Asignación declinada' : 'Pendiente de dictamen'}
+            ${a.estado === 'entregada' ? 'Evaluación registrada' : a.estado === 'declinada' ? 'Asignación declinada' : 'Pendiente de dictamen'}
           </span>
         </div>
         <p style="font-size:13px; color:var(--gris-texto);">${escaparHTML(m.resumen || '')}</p>
@@ -277,7 +278,7 @@ async function cargarVistaRevisor(userId) {
           <a href="evaluacion.html?a=${a.id}" class="boton"
              style="text-decoration:none; display:inline-block; margin-left:8px;">Capturar dictamen</a>
         ` : a.estado === 'entregada' ? `
-          <span style="font-size:13px; color:var(--gris-texto); margin-left:8px;">Ya enviaste tu evaluación, gracias.</span>
+          <span style="font-size:13px; color:var(--gris-texto); margin-left:8px;">La evaluación de esta asignación ya fue registrada.</span>
         ` : ''}
       </div>
     `);
@@ -379,6 +380,7 @@ async function cargarVistaEditor() {
         ${renderEditorAreaAsignado(m, editoresAreaLista, rolPanelActual)}
         ${renderConflictos(m, editoresArea || [])}
 
+        ${['aceptado','publicado'].includes(m.estado) ? `<button type="button" onclick="abrirCartaAceptacion('${m.id}')">Preparar carta de aceptación</button>` : ''}
         <label>Cambiar estado</label>
         <select onchange="cambiarEstado('${m.id}', this.value, this)">
           ${Object.keys(ETIQUETAS_ESTADO).map(e =>
@@ -390,7 +392,7 @@ async function cargarVistaEditor() {
         <ul>${asignados.map(a => {
           const r = (revisores || []).find(r => r.id === a.reviewer_id);
           const nombre = r ? r.nombre_completo + ' (' + r.email + ')' : 'Revisor registrado';
-          const estado = {pendiente:'Pendiente de dictamen',aceptada:'Asignación aceptada',entregada:'Dictamen entregado',declinada:'Asignación declinada'}[a.estado] || a.estado;
+          const estado = {pendiente:'Pendiente de dictamen',aceptada:'Asignación aceptada',entregada:'Evaluación registrada',declinada:'Asignación declinada'}[a.estado] || a.estado;
           return '<li>' + escaparHTML(nombre) + ' — ' + escaparHTML(estado) + '</li>';
         }).join('') || '<li>Aún no hay revisores asignados.</li>'}</ul>
         <label>Asignar otro revisor</label>
@@ -402,6 +404,7 @@ async function cargarVistaEditor() {
           <button class="secundario" style="margin-top:0;" onclick="asignarRevisor('${m.id}')">Asignar</button>
         </div>
 
+        ${await renderAntecedentes(m)}
         ${await renderVersiones(m.id)}
         ${await renderDictamenes(m.id)}
       </div>
@@ -435,15 +438,22 @@ async function subirAnonimizado(manuscriptId) {
 }
 
 async function cambiarEstado(manuscriptId, nuevoEstado, selectEl) {
-  const { error } = await db.from('manuscripts').update({ estado: nuevoEstado }).eq('id', manuscriptId);
-  if (error) {
-    // El error más probable aquí es el candado de anonimización (Fase 3):
-    // el mensaje de la base de datos ya es legible para el editor.
-    alert(error.message.includes('anonimizado')
-      ? error.message
-      : 'Error al actualizar: ' + error.message);
-    cargarVistaEditor(); // recarga para que el <select> vuelva a mostrar el estado real
+  if (nuevoEstado === 'aceptado' && !confirm('¿Registrar la aceptación editorial? Confirma que la evaluación y las correcciones están completas. Después podrás revisar la carta.')) {
+    if (selectEl) selectEl.value = cacheManuscritos[manuscriptId]?.estado || '';
+    return;
   }
+  if (selectEl) selectEl.disabled = true;
+  try {
+    const {data: auth, error: authError} = await db.auth.getUser();
+    if (authError || auth.user?.id !== usuarioPanelActual) throw new Error('La cuenta activa cambió. Recarga el panel.');
+    const {data, error} = await db.from('manuscripts').update({estado:nuevoEstado}).eq('id',manuscriptId).select('id').single();
+    if (error || !data) throw error || new Error('No se pudo confirmar el cambio.');
+    await cargarVistaEditor();
+    if (nuevoEstado === 'aceptado') await abrirCartaAceptacion(manuscriptId);
+  } catch (err) {
+    alert('No se pudo completar la operación: ' + err.message);
+    await cargarVistaEditor();
+  } finally { if (selectEl) selectEl.disabled = false; }
 }
 
 async function asignarRevisor(manuscriptId) {
