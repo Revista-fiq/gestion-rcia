@@ -94,10 +94,19 @@ document.getElementById('btn-enviar')?.addEventListener('click', async () => {
     return;
   }
 
+  if (!document.getElementById('acepta-licencia')?.checked) {
+    mostrarAviso(aviso, 'Para enviar el manuscrito, debes aceptar las condiciones de publicación y confirmar la autorización de todos los coautores.', 'error');
+    document.getElementById('acepta-licencia')?.focus();
+    return;
+  }
+
   boton.disabled = true;
   boton.textContent = 'Enviando…';
 
   try {
+    // Comprobar la habilitación antes de subir archivos.
+    const { error: licenciaError } = await db.from('manuscripts').select('condiciones_publicacion').limit(0);
+    if (licenciaError) throw new Error('No se pudo comprobar el registro de las condiciones de publicación. Contacta a la revista; tus archivos aún no se han enviado.');
     const coautores = coautoresTexto
       ? coautoresTexto.split('\n').filter(Boolean).map(linea => {
           const [nombre, orcid, institucion] = linea.split(',').map(s => s?.trim());
@@ -120,6 +129,7 @@ document.getElementById('btn-enviar')?.addEventListener('click', async () => {
       area_tematica: area,
       autor_correspondencia_id: session.user.id,
       coautores,
+      condiciones_publicacion: { version: 'CC-BY-4.0-RCIA-2026-10-16', aceptado: true },
       archivo_manuscrito_url: urlManuscrito,
       archivo_carta_url: urlCarta,
       archivo_conflictos_url: urlConflictos,
@@ -147,3 +157,4 @@ document.getElementById('btn-enviar')?.addEventListener('click', async () => {
     boton.textContent = 'Enviar manuscrito';
   }
 });
+
