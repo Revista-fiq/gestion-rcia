@@ -366,6 +366,18 @@ async function cargarVistaEditor() {
         <a href="${escaparHTML(m.archivo_manuscrito_url)}" target="_blank" rel="noopener noreferrer" class="boton secundario"
            style="text-decoration:none; display:inline-block; margin-top:0;">Ver archivo original</a>
 
+        <div style="margin:18px 0;padding:14px;border:1px solid #cbd5e1;border-radius:6px;">
+          <strong>Documentos del envío</strong>
+          ${[
+            ['Declaración de conflictos de interés', m.archivo_conflictos_url],
+            ['Carta de presentación', m.archivo_carta_url],
+            ['Material suplementario', m.archivo_material_suplementario_url]
+          ].map(([nombre, url]) => url
+            ? `<div style="margin-top:10px;"><a href="${escaparHTML(url)}" target="_blank" rel="noopener noreferrer" class="boton secundario" style="text-decoration:none;display:inline-block;margin-top:0;">Ver ${escaparHTML(nombre.toLowerCase())}</a></div>`
+            : `<p style="margin:10px 0 0;">${escaparHTML(nombre)}: sin archivo registrado.</p>`
+          ).join('')}
+        </div>
+
         <label>Manuscrito anonimizado (esto es lo único que ve el revisor)</label>
         ${m.archivo_anonimizado_url
           ? `<a href="${m.archivo_anonimizado_url}" target="_blank" class="boton secundario"
