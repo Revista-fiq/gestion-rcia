@@ -58,11 +58,28 @@
     <div class="archivo-seleccionado oculto" id="sel-archivo_manuscrito"></div>
 
     <label for="archivo_carta">Carta de presentación firmada *</label>
-    <input type="file" id="archivo_carta" accept=".pdf">
+    <div id="guia-carta" style="font-size:14px;line-height:1.6;">
+      <p>Formato libre. Se recomienda una página como máximo; una carta breve es suficiente si incluye:</p>
+      <ul>
+        <li>Título y tipo de contribución.</li>
+        <li>Una breve explicación de su aportación y pertinencia para RCIA-UADY.</li>
+        <li>Confirmación de originalidad y de que el manuscrito no está sometido simultáneamente a otra revista.</li>
+        <li>Conformidad de todos los autores con el envío.</li>
+        <li>Nombre, datos de contacto y firma del autor de correspondencia.</li>
+      </ul>
+      <p>Esta carta acompaña el envío inicial. La <strong>carta de respuesta a revisores</strong> explica los cambios realizados durante las correcciones y es un documento distinto. La aceptación de CC BY 4.0 se registra en la casilla de este formulario; no es necesario repetir todo su texto en la carta.</p>
+      <p>Adjunta la carta de presentación firmada en PDF.</p>
+    </div>
+    <input type="file" id="archivo_carta" accept=".pdf" aria-describedby="guia-carta">
     <div class="archivo-seleccionado oculto" id="sel-archivo_carta"></div>
 
     <label for="archivo_conflictos">Declaración de conflictos de interés *</label>
-    <input type="file" id="archivo_conflictos" accept=".pdf">
+    <div id="guia-conflictos" style="font-size:14px;line-height:1.6;">
+      <p>Completa el modelo de la revista para declarar tanto la ausencia como la existencia de conflictos de interés. Incluye el título, todos los autores, el financiamiento o apoyos y la confirmación, fecha y firma del autor de correspondencia.</p>
+      <p><a href="formatos/declaracion-conflictos-RCIA.txt" download>Descargar modelo de declaración de conflictos (.txt)</a></p>
+      <p>Abre el modelo y copia su contenido en Word u otro editor. Complétalo, fírmalo y adjúntalo en PDF. Consulta a todos los coautores antes de elegir la opción correspondiente. <strong>No adjuntes aquí la carta de presentación ni la respuesta a revisores.</strong></p>
+    </div>
+    <input type="file" id="archivo_conflictos" accept=".pdf" aria-describedby="guia-conflictos">
     <div class="archivo-seleccionado oculto" id="sel-archivo_conflictos"></div>
 
     <label for="archivo_suplementario">Material suplementario (opcional)</label>
