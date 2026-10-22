@@ -11,7 +11,8 @@ name: Revista Supabase keep-alive
 
 on:
   schedule:
-    - cron: "43 15 */3 * *"   # cada 3 días, 09:43 hora de Mérida
+    - cron: "43 15 * * *"     # diario, 09:43 hora de Mérida
+    - cron: "13 3 * * *"      # diario, 21:13 hora de Mérida
   workflow_dispatch:          # permite ejecutarlo manualmente para probar
 
 jobs:
@@ -24,12 +25,16 @@ jobs:
           SUPABASE_ANON_KEY: ${{ secrets.REVISTA_SUPABASE_ANON_KEY }}
           TABLE: ${{ vars.REVISTA_SUPABASE_TABLE }}
         run: |
-          status=$(curl -s -o /dev/null -w "%{http_code}" \
-            "$SUPABASE_URL/rest/v1/$TABLE?select=*&limit=1" \
-            -H "apikey: $SUPABASE_ANON_KEY" \
-            -H "Authorization: Bearer $SUPABASE_ANON_KEY")
-          echo "Respuesta HTTP: $status"
-          if [ "$status" != "200" ]; then
-            echo "El ping falló. Revise si el proyecto está pausado o si la tabla existe."
-            exit 1
-          fi
+          # Tres consultas por ejecución (dos ejecuciones al día)
+          for i in 1 2 3; do
+            status=$(curl -s -o /dev/null -w "%{http_code}" \
+              "$SUPABASE_URL/rest/v1/$TABLE?select=*&limit=1" \
+              -H "apikey: $SUPABASE_ANON_KEY" \
+              -H "Authorization: Bearer $SUPABASE_ANON_KEY")
+            echo "Consulta $i - Respuesta HTTP: $status"
+            if [ "$status" != "200" ]; then
+              echo "El ping falló. Revise si el proyecto está pausado o si la tabla existe."
+              exit 1
+            fi
+            sleep 20
+          done
