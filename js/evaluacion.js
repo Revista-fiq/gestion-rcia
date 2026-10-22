@@ -61,6 +61,7 @@ async function iniciar() {
     return;
   }
 
+  if (asignacion.estado !== 'aceptada') { document.getElementById('infoResumen').textContent = 'Antes de capturar el dictamen, acepta la invitación desde tu panel de revisor.'; return; }
   renderCriterios();
   document.getElementById('necesitaSegundaRevision').addEventListener('change', () => {
     const no = document.getElementById('necesitaSegundaRevision').value === 'No';
@@ -112,7 +113,7 @@ function recomendacion(total) {
 }
 
 document.getElementById('btnEnviar')?.addEventListener('click', async () => {
-  if (!asignacionActual || !['pendiente', 'aceptada'].includes(asignacionActual.estado) || document.getElementById('btnEnviar').disabled) return;
+  if (!asignacionActual || asignacionActual.estado !== 'aceptada' || document.getElementById('btnEnviar').disabled) return;
   const resultadoDiv = document.getElementById('resultado');
   const estado = document.getElementById('estadoEnvio');
   estado.textContent = '';
@@ -211,5 +212,6 @@ async function enviar(datos) {
 }
 
 iniciar().catch(() => { document.getElementById('infoFolio').textContent = 'No se pudo cargar la evaluación. Vuelve al panel e inténtalo de nuevo.'; });
+
 
 
