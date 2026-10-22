@@ -274,7 +274,8 @@ async function cargarVistaRevisor(userId) {
                style="text-decoration:none; display:inline-block;">Ver manuscrito (versión anonimizada)</a>`
           : `<span style="font-size:13px; color:var(--gris-texto);">El editor aún no ha subido la versión anonimizada.</span>`
         }
-        ${['pendiente', 'aceptada'].includes(a.estado) && m.archivo_manuscrito_url ? `
+        ${a.estado === 'pendiente' ? `<p>¿Cuenta con disponibilidad para evaluar este manuscrito?</p><button onclick="responderInvitacion('${a.id}',true)">Aceptar invitación</button> <button class="secundario" onclick="responderInvitacion('${a.id}',false)">Declinar invitación</button>` : ''}
+        ${a.estado === 'aceptada' && m.archivo_manuscrito_url ? `
           <a href="evaluacion.html?a=${a.id}" class="boton"
              style="text-decoration:none; display:inline-block; margin-left:8px;">Capturar dictamen</a>
         ` : a.estado === 'entregada' ? `
@@ -328,7 +329,7 @@ async function cargarVistaEditor() {
   const { data: revisores } = await db.from('profiles').select('*').eq('role', 'revisor').eq('activo', true);
   const { data: editoresArea } = await db.from('profiles').select('*').eq('role', 'editor_area');
   const { data: asignaciones, error: errorAsignaciones } = await db.from('review_assignments')
-    .select('manuscript_id, reviewer_id, estado');
+    .select('manuscript_id, reviewer_id, estado, fecha_respuesta_invitacion, motivo_declinacion');
   if (errorAsignaciones) {
     cont.textContent = 'No se pudieron comprobar las asignaciones. Recarga el panel antes de asignar revisores.';
     return;
@@ -405,7 +406,7 @@ async function cargarVistaEditor() {
           const r = (revisores || []).find(r => r.id === a.reviewer_id);
           const nombre = r ? r.nombre_completo + ' (' + r.email + ')' : 'Revisor registrado';
           const estado = {pendiente:'Pendiente de dictamen',aceptada:'Asignación aceptada',entregada:'Evaluación registrada',declinada:'Asignación declinada'}[a.estado] || a.estado;
-          return '<li>' + escaparHTML(nombre) + ' — ' + escaparHTML(estado) + '</li>';
+          return '<li>' + escaparHTML(nombre) + ' — ' + escaparHTML(estado) + (a.fecha_respuesta_invitacion ? ' · Respuesta: ' + formatoFecha(a.fecha_respuesta_invitacion) : '') + (a.motivo_declinacion ? '<br>Motivo: ' + escaparHTML(a.motivo_declinacion) : '') + '</li>';
         }).join('') || '<li>Aún no hay revisores asignados.</li>'}</ul>
         <label>Asignar otro revisor</label>
         <div style="display:flex; gap:8px;">
@@ -606,4 +607,23 @@ async function guardarConflicto(mid, uid, bloquear) {
     alert(bloquear ? 'Exclusión guardada. Los enlaces temporales ya emitidos pueden seguir funcionando hasta 60 segundos; los archivos previamente descargados no se pueden retirar.' : 'Exclusión retirada.');
   } catch (error) { alert('No se pudo cambiar la exclusión: ' + error.message); }
   finally { conflictosEnCurso.delete(mid); }
+}
+
+
+const respuestasEnCurso = new Set();
+async function responderInvitacion(aid, aceptar) {
+ if (respuestasEnCurso.has(aid)) return;
+ let motivo=null;
+ if (!aceptar) { motivo=prompt('Motivo de la declinación (opcional, visible para los editores):',''); if(motivo===null)return; if(motivo.length>1000){alert('El motivo admite hasta 1000 caracteres.');return;} }
+ if (!confirm(aceptar ? '¿Confirmar tu disponibilidad para evaluar este manuscrito?' : '¿Declinar esta invitación? Los editores recibirán tu respuesta.'))return;
+ respuestasEnCurso.add(aid);
+ try {
+  const {data:identidad,error:sesionError}=await db.auth.getUser();
+  if(sesionError || identidad.user?.id!==usuarioPanelActual)throw new Error('La cuenta activa cambió. Recarga el panel.');
+  const {error}=await db.rpc('rcia_responder_invitacion',{aid,aceptar,motivo});
+  if(error)throw error;
+  await cargarVistaRevisor(usuarioPanelActual);
+  alert('Respuesta registrada. Se generará un aviso para el editor de área y el editor responsable.');
+ } catch(error){alert('No se pudo confirmar la respuesta: '+error.message+' Revisa el panel antes de repetirla.');}
+ finally{respuestasEnCurso.delete(aid);}
 }
