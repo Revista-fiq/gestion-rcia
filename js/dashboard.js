@@ -329,7 +329,7 @@ async function cargarVistaEditor() {
   const { data: revisores } = await db.from('profiles').select('*').eq('role', 'revisor').eq('activo', true);
   const { data: editoresArea } = await db.from('profiles').select('*').eq('role', 'editor_area');
   const { data: asignaciones, error: errorAsignaciones } = await db.from('review_assignments')
-    .select('manuscript_id, reviewer_id, estado, fecha_respuesta_invitacion, motivo_declinacion');
+    .select('id, manuscript_id, reviewer_id, estado, fecha_respuesta_invitacion, motivo_declinacion');
   if (errorAsignaciones) {
     cont.textContent = 'No se pudieron comprobar las asignaciones. Recarga el panel antes de asignar revisores.';
     return;
@@ -406,7 +406,9 @@ async function cargarVistaEditor() {
           const r = (revisores || []).find(r => r.id === a.reviewer_id);
           const nombre = r ? r.nombre_completo + ' (' + r.email + ')' : 'Revisor registrado';
           const estado = {pendiente:'Pendiente de dictamen',aceptada:'Asignación aceptada',entregada:'Evaluación registrada',declinada:'Asignación declinada'}[a.estado] || a.estado;
-          return '<li>' + escaparHTML(nombre) + ' — ' + escaparHTML(estado) + (a.fecha_respuesta_invitacion ? ' · Respuesta: ' + formatoFecha(a.fecha_respuesta_invitacion) : '') + (a.motivo_declinacion ? '<br>Motivo: ' + escaparHTML(a.motivo_declinacion) : '') + '</li>';
+          const reenvio = a.estado === 'pendiente' && r && !['aceptado','publicado','rechazado','desistido'].includes(m.estado)
+            ? ` <button type="button" class="secundario" onclick="reenviarInvitacion('${a.id}', this)">Reenviar invitación</button>` : '';
+          return '<li>' + escaparHTML(nombre) + ' — ' + escaparHTML(estado) + (a.fecha_respuesta_invitacion ? ' · Respuesta: ' + formatoFecha(a.fecha_respuesta_invitacion) : '') + (a.motivo_declinacion ? '<br>Motivo: ' + escaparHTML(a.motivo_declinacion) : '') + reenvio + '</li>';
         }).join('') || '<li>Aún no hay revisores asignados.</li>'}</ul>
         <label>Asignar otro revisor</label>
         <div style="display:flex; gap:8px;">
@@ -627,3 +629,32 @@ async function responderInvitacion(aid, aceptar) {
  } catch(error){alert('No se pudo confirmar la respuesta: '+error.message+' Revisa el panel antes de repetirla.');}
  finally{respuestasEnCurso.delete(aid);}
 }
+
+// Conserva la clave al perder la conexión: reintentar no duplica el correo.
+const reenviosEnCurso = new Set();
+const solicitudesReenvio = new Map();
+async function reenviarInvitacion(aid, boton) {
+  if (!['editor', 'editor_area'].includes(rolPanelActual) || reenviosEnCurso.has(aid)) return;
+  if (!confirm('¿Reenviar la invitación al correo vigente del perfil del revisor? Se conserva la misma asignación.')) return;
+  reenviosEnCurso.add(aid);
+  boton.disabled = true;
+  try {
+    const { data: identidad, error: sesionError } = await db.auth.getUser();
+    if (sesionError || identidad.user?.id !== usuarioPanelActual) throw new Error('La cuenta activa cambió. Recarga el panel.');
+    if (!solicitudesReenvio.has(aid)) solicitudesReenvio.set(aid, crypto.randomUUID());
+    const { data, error } = await db.rpc('rcia_reenviar_invitacion', { aid, solicitud: solicitudesReenvio.get(aid) });
+    if (error) {
+      if (error.code === 'PGRST202' || error.code === '42883') throw new Error('Falta activar el reenvío en Supabase con schema_fase12_reenviar_invitacion.sql.');
+      throw error;
+    }
+    if (!data?.registrada) throw new Error('No se pudo confirmar el registro del reenvío.');
+    solicitudesReenvio.delete(aid);
+    alert('Solicitud de reenvío registrada para ' + data.email + '. El correo puede tardar unos minutos; esto no confirma su recepción.');
+  } catch (error) {
+    alert('No se pudo confirmar el reenvío: ' + error.message + ' Puedes reintentar desde este panel sin duplicar la solicitud.');
+  } finally {
+    reenviosEnCurso.delete(aid);
+    boton.disabled = false;
+  }
+}
+
