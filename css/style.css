@@ -268,3 +268,12 @@ button.secundario {
 @media (max-width: 640px) {
   .tarjeta-cabecera { flex-direction: column; }
 }
+
+/* Selector de acceso: no modifica los roles de las cuentas. */
+.selector-acceso { border:1px solid #b9c7d6; border-radius:6px; padding:16px; margin:20px 0; }
+.selector-acceso legend { font-weight:700; padding:0 6px; }
+.selector-acceso label { display:flex; align-items:flex-start; gap:12px; padding:14px; margin:8px 0; border:1px solid #b9c7d6; border-radius:4px; cursor:pointer; line-height:1.5; }
+.selector-acceso input { width:auto; flex:0 0 auto; margin-top:5px; }
+.selector-acceso label:has(input:checked) { background:#eef5fc; border-color:#345c87; }
+.selector-acceso label:focus-within { outline:2px solid #345c87; outline-offset:2px; }
+

@@ -4,55 +4,52 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Acceso — Gestión Editorial RCIA-UADY</title>
-<link rel="stylesheet" href="css/style.css">
+<link rel="stylesheet" href="css/style.css?v=20261027-acceso">
 </head>
 <body>
-
 <div class="barra-superior">
   <div class="marca">
     <img src="https://revista-fiq.github.io/P-gina-Web/Logo-dia.png" alt="Logo UADY FIQ">
     RCIA-UADY · Gestión Editorial
   </div>
-  <nav>
-    <a href="https://revista-fiq.github.io/P-gina-Web/">Sitio de la revista</a>
-  </nav>
+  <nav><a href="https://revista-fiq.github.io/P-gina-Web/">Sitio de la revista</a></nav>
 </div>
-
-<div class="contenedor" style="max-width: 420px;">
+<main class="contenedor" style="max-width:540px;">
   <h1>Acceso al sistema</h1>
-  <p class="subtitulo">Portal de autores, revisores y editores de RCIA-UADY.</p>
-
-  <div class="tarjeta" style="border:2px solid #345c87;background:#eef5fc;">
-    <h2 style="font-size:21px;margin-top:0;">¿Es tu primer envío?</h2>
-    <p>No necesitas solicitar una cuenta ni una contraseña a la revista.</p>
-    <ol style="padding-left:22px;line-height:1.7;">
-      <li>Escribe abajo <strong>tu correo y una contraseña elegida por ti</strong>.</li>
-      <li>Selecciona <strong>Crear cuenta de autor</strong> y completa tu nombre. Recibirás automáticamente el rol de autor.</li>
-      <li>Si se solicita confirmar tu correo, revisa también la carpeta de correo no deseado.</li>
-    </ol>
-    <p><strong>¿Ya tienes cuenta?</strong> Usa «Iniciar sesión». Si la revista te proporcionó una contraseña provisional, cámbiala al ingresar. No crees otra cuenta.</p>
+  <p class="subtitulo">Selecciona cómo participas en la revista.</p>
+  <fieldset class="selector-acceso">
+    <legend>¿Cómo deseas ingresar?</legend>
+    <label><input type="radio" name="tipo-acceso" value="autor"> <span><strong>Autor o autora</strong><br>Enviar un manuscrito o consultar su seguimiento.</span></label>
+    <label><input type="radio" name="tipo-acceso" value="editorial"> <span><strong>Revisores y editores</strong><br>Evaluar manuscritos o gestionar el proceso editorial.</span></label>
+  </fieldset>
+  <div id="guia-autor" class="tarjeta oculto">
+    <h2 style="font-size:21px;margin-top:0;">Acceso de autores</h2>
+    <p>Si ya tienes cuenta, inicia sesión con tu contraseña vigente.</p>
+    <p>Solo para tu primer envío y si aún no tienes cuenta: escribe tu correo, elige una contraseña y pulsa «Crear cuenta de autor».</p>
+  </div>
+  <div id="guia-editorial" class="tarjeta oculto">
+    <h2 style="font-size:21px;margin-top:0;">Acceso de revisores y editores</h2>
+    <p>Usa el correo de tu invitación y la contraseña de tu cuenta. Si la revista te proporcionó una contraseña inicial y aún no la has cambiado, utiliza esa.</p>
+    <p><strong>No necesitas crear otra cuenta.</strong> Si no recuerdas tu contraseña o nunca la recibiste, contacta a la revista para recuperar el acceso.</p>
   </div>
   <div class="tarjeta">
-    <div id="aviso-login"></div>
-
+    <div id="aviso-login" role="status" aria-live="polite"></div>
     <label for="email">Correo electrónico</label>
     <input type="email" id="email" placeholder="tu@correo.com" autocomplete="email">
-
     <label for="password">Contraseña</label>
-    <input type="password" id="password" placeholder="••••••••" autocomplete="current-password">
-
-    <button id="btn-login" style="width: 100%;">Iniciar sesión</button>
-    <button id="btn-registro" class="secundario" style="width: 100%;">Crear cuenta de autor</button>
+    <input type="password" id="password" autocomplete="current-password">
+    <button id="btn-login" style="width:100%;" disabled>Iniciar sesión</button>
+    <button id="btn-registro" class="secundario oculto" style="width:100%;">Crear cuenta de autor</button>
+    <div id="acciones-cuenta" class="oculto">
+      <a href="dashboard.html" class="boton" style="display:inline-block;">Ir al panel de mi cuenta</a>
+      <button type="button" id="btn-otra-cuenta" class="secundario">Usar otra cuenta</button>
+    </div>
   </div>
-
-  <p class="subtitulo" style="text-align:center;">
-    ¿Problemas para acceder? Escribe a
-    <a href="mailto:revista.fiq@correo.uady.mx">revista.fiq@correo.uady.mx</a>
-  </p>
-</div>
-
+  <p class="subtitulo">Esta selección orienta el acceso; tu cuenta determina los permisos. Una invitación no crea otra cuenta ni cambia tu contraseña. Al entrar puedes usar «Cambiar contraseña» en el panel.</p>
+  <p class="subtitulo">¿Problemas para acceder? No crees una cuenta adicional. Escribe a <a href="mailto:revista.fiq@correo.uady.mx">revista.fiq@correo.uady.mx</a> e indica el correo con el que intentas ingresar. Nunca envíes tu contraseña.</p>
+</main>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="js/supabase-client.js"></script>
-<script src="js/auth.js"></script>
+<script src="js/auth.js?v=20261027-acceso"></script>
 </body>
 </html>
