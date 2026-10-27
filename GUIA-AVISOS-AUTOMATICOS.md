@@ -30,3 +30,10 @@ Los correos automáticos incluyen información del evento y el enlace al portal;
 ## Acceso al portal
 
 El envío editorial automático es independiente de los correos de registro, invitación y recuperación de contraseña. La integración de esos correos sigue pendiente. Se conserva el procedimiento de acceso vigente; no se cambia la contraseña de las cuentas existentes.
+
+## Estados de seguimiento (fase 13)
+
+La fase 13 debe instalarse en Supabase según ACTIVAR-ESTADOS.md. Tras instalarla, la primera aceptación válida inicia «En revisión» cuando hay editor de área y manuscrito anonimizado. Al completarse los dictámenes requeridos y quedar resueltas las invitaciones adicionales, pasa a «Dictamen emitido». Se requieren dos por defecto, ajustables por el editor en cada expediente.
+
+Esas transiciones se registran en la bitácora y no son decisiones de aceptación o rechazo. No agregan otro correo a los avisos de respuesta y dictamen ya existentes. Correcciones, aceptación, rechazo, publicación y desistimiento conservan su decisión editorial manual y sus avisos configurados. La instalación no actualiza retrospectivamente todos los expedientes.
+

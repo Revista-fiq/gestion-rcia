@@ -1,5 +1,6 @@
 RCIA-UADY
-DECLARACIÓN DE CONFLICTOS DE INTERÉS
+DECLARACIÓN DE CONFLICTOS DE INTERÉS Y FINANCIAMIENTO
+Actualización: 27 de octubre de 2026
 
 Título del manuscrito:
 ____________________________________________________________
@@ -9,45 +10,66 @@ ____________________________________________________________
 ____________________________________________________________
 
 1. CONFLICTOS DE INTERÉS
-Marque una sola opción, después de consultar a todos los coautores:
+Marque una opción después de recabar la confirmación individual de cada autor:
+[ ] Ningún autor declara conflictos de interés.
+[ ] Uno o más autores declaran los siguientes conflictos:
 
-[ ] No existen conflictos de interés que declarar.
-[ ] Se declaran los siguientes conflictos de interés:
-
-Indique la persona autora involucrada, la relación o interés y su posible
-vinculación con el trabajo (por ejemplo, relaciones económicas, laborales,
-personales o institucionales):
+Nombre del autor, relación o interés y vinculación con el trabajo:
 ____________________________________________________________
 ____________________________________________________________
 ____________________________________________________________
 
 2. FINANCIAMIENTO Y APOYOS
-Declare las fuentes de financiamiento y otros apoyos recibidos. Incluya,
-cuando corresponda, institución, número de proyecto y participación del
-financiador en el estudio o en la decisión de publicar. Si no recibió
-financiamiento ni apoyos, indíquelo expresamente.
+Indique fuentes, institución, proyecto y apoyos recibidos por el trabajo
+o por la contribución de cada autor. Describa el papel de los financiadores
+en el estudio, su redacción y la decisión de publicar. Si no hubo apoyo
+o el financiador no intervino, indíquelo expresamente.
 ____________________________________________________________
 ____________________________________________________________
+____________________________________________________________
+El financiamiento no constituye por sí solo un conflicto de interés.
+
+3. MODALIDAD DE FIRMA (marque una)
+[ ] A. Firma de un representante autorizado por todos los autores.
+[ ] B. Firma de todos los autores, aquí o en hojas individuales anexas.
+
+Para ambas modalidades: cada autor confirma su propia información,
+incluida la ausencia de conflictos cuando corresponda, y conserva su
+responsabilidad individual. Todos se comprometen a comunicar cambios
+relevantes durante el proceso editorial.
+
+MODALIDAD A: REPRESENTACIÓN
+Declaro que recabé la confirmación individual de todos los autores sobre
+sus conflictos y financiamiento y que el documento refleja fielmente esa
+información. Todos me autorizaron expresamente a presentar y firmar esta
+declaración. Conservo las confirmaciones y autorizaciones por escrito
+(por ejemplo, correos o documentos firmados) y las proporcionaré a la
+revista cuando se soliciten. No firmo en nombre de nadie sin autorización.
+
+Nombre del representante:
+____________________________________________________________
+Calidad: [ ] Autor de correspondencia  [ ] Otro representante autorizado
+Si es otro representante, indique al autor de correspondencia:
+____________________________________________________________
+Correo, lugar y fecha:
+____________________________________________________________
+Firma del representante:
 ____________________________________________________________
 
-El financiamiento se declara por separado; haber recibido apoyo no implica,
-por sí solo, la existencia de un conflicto de interés.
+MODALIDAD B: FIRMAS DE TODOS LOS AUTORES
+Cada persona firmante confirma su información en los apartados 1 y 2
+y su conformidad con la presentación de esta declaración.
+Nombre completo | Fecha | Firma
+____________________________________________________________
+____________________________________________________________
+____________________________________________________________
+Agregue tantas filas u hojas como sean necesarias. Las hojas anexas
+deben identificar el mismo manuscrito y la persona que declara y firma.
 
-3. CONFIRMACIÓN DEL AUTOR DE CORRESPONDENCIA
-Confirmo que consulté a todos los coautores y que esta declaración refleja
-la información proporcionada por ellos. Cuento con su conformidad para
-presentarla en nombre del conjunto de autores. Informaré a la revista si
-surge algún cambio relevante durante el proceso editorial.
-
-Nombre completo del autor de correspondencia:
-____________________________________________________________
-Correo electrónico:
-____________________________________________________________
-Lugar y fecha:
-____________________________________________________________
-Firma:
+CONTACTO PARA AMBAS MODALIDADES
+Autor de correspondencia y correo:
 ____________________________________________________________
 
-Complete este modelo, firme el documento y adjúntelo en PDF en el campo
-«Declaración de conflictos de interés» del envío. No lo sustituya por la
-carta de presentación ni por la carta de respuesta a revisores.
+Complete solo la sección de firma elegida. Adjunte el documento y sus
+anexos en un único PDF en «Declaración de conflictos de interés».
+No lo sustituya por la carta de presentación ni la respuesta a revisores.

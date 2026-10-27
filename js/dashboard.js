@@ -394,6 +394,13 @@ async function cargarVistaEditor() {
         ${renderConflictos(m, editoresArea || [])}
 
         ${['aceptado','publicado'].includes(m.estado) ? `<button type="button" onclick="abrirCartaAceptacion('${m.id}')">Preparar carta de aceptación</button>` : ''}
+        ${m.dictamenes_requeridos != null && ['recibido','acuse_enviado','en_revision'].includes(m.estado) ? `
+        <div style="margin:14px 0;">
+          <label for="umbral-revision-${m.id}">Dictámenes requeridos para completar la revisión</label>
+          <input type="number" min="1" max="10" step="1" id="umbral-revision-${m.id}" value="${m.dictamenes_requeridos}">
+          <button type="button" class="secundario" onclick="guardarUmbralRevision('${m.id}', this)">Guardar número de dictámenes</button>
+          <p>La revisión se inicia al aceptar un revisor. Para marcar «Dictamen emitido» deben recibirse los dictámenes requeridos y resolverse todas las invitaciones pendientes. La decisión editorial sigue a cargo del editor.</p>
+        </div>` : ''}
         <label>Cambiar estado</label>
         <select onchange="cambiarEstado('${m.id}', this.value, this)">
           ${Object.keys(ETIQUETAS_ESTADO).map(e =>
@@ -656,5 +663,23 @@ async function reenviarInvitacion(aid, boton) {
     reenviosEnCurso.delete(aid);
     boton.disabled = false;
   }
+}
+
+
+async function guardarUmbralRevision(mid, boton) {
+  if (!['editor','editor_area'].includes(rolPanelActual) || boton.disabled) return;
+  const requerido=Number(document.getElementById('umbral-revision-'+mid).value);
+  if (!Number.isInteger(requerido) || requerido<1 || requerido>10) { alert('Indica un número entero entre 1 y 10.'); return; }
+  if (!confirm('¿Establecer '+requerido+' dictámenes requeridos para '+cacheManuscritos[mid]?.folio+'? El estado puede actualizarse si ya están completos.')) return;
+  boton.disabled=true;
+  try {
+    const {data:identidad,error:sesionError}=await db.auth.getUser();
+    if(sesionError || identidad?.user?.id!==usuarioPanelActual) throw new Error('La cuenta activa cambió. Recarga el panel.');
+    const {data,error}=await db.from('manuscripts').update({dictamenes_requeridos:requerido}).eq('id',mid).select('id').single();
+    if(error || !data) throw error || new Error('No se pudo confirmar la configuración.');
+    await cargarVistaEditor();
+    alert('Número de dictámenes guardado.');
+  } catch(error) { alert('No se pudo guardar: '+error.message); }
+  finally { boton.disabled=false; }
 }
 

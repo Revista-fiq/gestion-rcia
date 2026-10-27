@@ -1,7 +1,7 @@
 {
   "private": true,
   "scripts": {
-    "test": "node tests/ficha.mjs && node tests/revision.mjs && node tests/reenvio.mjs && node tests/acceso.mjs"
+    "test": "node tests/ficha.mjs && node tests/revision.mjs && node tests/reenvio.mjs && node tests/acceso.mjs && node tests/estados.mjs"
   },
   "devDependencies": {
     "@electric-sql/pglite": "0.5.8"
