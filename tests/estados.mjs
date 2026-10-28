@@ -2,7 +2,7 @@ import {PGlite} from '@electric-sql/pglite';
 import {readFileSync} from 'node:fs';
 import assert from 'node:assert/strict';
 const db=new PGlite();const file=p=>readFileSync(p,'utf8');
-await db.exec(`create role anon;create role authenticated;create schema auth;
+await db.exec(`create role anon;create role authenticated;create role service_role;create schema auth;
 create table auth.users(id uuid primary key);
 create function auth.uid() returns uuid language sql stable as $$ select nullif(current_setting('request.jwt.claim.sub',true),'')::uuid $$;
 create schema storage;create table storage.buckets(id text primary key,name text,public boolean);
@@ -21,13 +21,15 @@ for(const p of ['schema_fase7_conflictos.sql','schema_fase8_antecedentes.sql'])a
 await db.exec(`create table rcia_mail_settings(enabled boolean); insert into rcia_mail_settings values(true);
 create table rcia_mail_queue(id uuid default gen_random_uuid(),event_key text,event_type text,
  manuscript_id uuid,assignment_id uuid,recipient_id uuid,recipient_role text,event_state text,status text default 'pending',
+ unique(event_key,recipient_id),
  constraint rcia_mail_queue_event_type_check check(event_type in ('review_assignment')));
 create function rcia_enqueue_mail(k text,ev text,mid uuid,aid uuid,pid uuid,expected_role text,state text default null)
  returns void language sql as $$ insert into public.rcia_mail_queue(event_key,event_type,manuscript_id,assignment_id,recipient_id,recipient_role,event_state)
- values(k,ev,mid,aid,pid,expected_role,state) $$;`);
+ values(k,ev,mid,aid,pid,expected_role,state) on conflict(event_key,recipient_id) do nothing $$;`);
 await db.exec(file('schema_fase11_invitaciones.sql'));
 await db.exec(file('schema_fase13_estados.sql'));
 await db.exec(file('schema_fase13_estados.sql'));
+await db.exec(file('schema_fase14_acuse_revisor.sql'));
 await db.exec('grant select,insert,update on all tables in schema public to authenticated');
 const ids=Array.from({length:8},(_,i)=>`00000000-0000-0000-0000-${String(i+1).padStart(12,'0')}`);
 const [autor,editor,area,otraArea,r1,r2,r3,r4]=ids;
@@ -91,5 +93,5 @@ const av=await assign(vacio,r1);await db.query("update review_assignments set es
 await db.query(`insert into editorial_antecedents(manuscript_id,assignment_id,tipo,fecha_documento,ruta,registrado_por)
  values($1,$2,'dictamen',current_date,$3,$4)`,[vacio,av,vacio+'/dictamen.pdf',editor]);
 assert.equal(await state(vacio),'dictamen_emitido');
-console.log('OK: fases reales 4/7/8/11/13, aceptación, entrega diferida, umbral, pendientes, bitácora, permisos y estados humanos.');
+console.log('OK: fases reales 4/7/8/11/13/14, aceptación, entrega diferida, umbral, pendientes, bitácora, permisos y estados humanos.');
 await db.close();

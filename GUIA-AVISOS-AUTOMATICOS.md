@@ -37,3 +37,10 @@ La fase 13 debe instalarse en Supabase según ACTIVAR-ESTADOS.md. Tras instalarl
 
 Esas transiciones se registran en la bitácora y no son decisiones de aceptación o rechazo. No agregan otro correo a los avisos de respuesta y dictamen ya existentes. Correcciones, aceptación, rechazo, publicación y desistimiento conservan su decisión editorial manual y sus avisos configurados. La instalación no actualiza retrospectivamente todos los expedientes.
 
+
+## Acuse de recepción al revisor (fase 14)
+
+Una vez desplegado el worker actualizado y aplicada la fase 14, cada nuevo dictamen válido genera un acuse al revisor, con copia CC al editor de área activo y autorizado. La copia sustituye el aviso independiente de recepción al área; el editor responsable conserva su aviso habitual. Si el acuse falla definitivamente, el sistema conserva o genera el aviso editorial del área como respaldo. No reintenta resultados inciertos ni genera constancias.
+
+El acuse confirma el registro del dictamen, no la aceptación del artículo. Incluye folio, fecha e identificador, sin comentarios ni archivos. La instalación no envía acuses de evaluaciones anteriores. Consultar ACTIVAR-ACUSE-REVISOR.md: publicar los archivos en GitHub no activa la función Edge ni la migración.
+
