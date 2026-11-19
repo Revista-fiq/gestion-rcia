@@ -173,6 +173,7 @@ async function cargarVistaAutor(userId) {
             </div>
           `).join('')}
         </div>
+        ${await renderResultadosAutor(m)}
         ${await renderAntecedentes(m)}
         ${await renderVersiones(m.id)}
         ${bloqueCorreccion}
@@ -429,6 +430,7 @@ async function cargarVistaEditor() {
         ${await renderAntecedentes(m)}
         ${await renderVersiones(m.id)}
         ${await renderDictamenes(m.id)}
+        ${await renderResultadosAutor(m)}
       </div>
     `);
   }
@@ -682,4 +684,3 @@ async function guardarUmbralRevision(mid, boton) {
   } catch(error) { alert('No se pudo guardar: '+error.message); }
   finally { boton.disabled=false; }
 }
-
