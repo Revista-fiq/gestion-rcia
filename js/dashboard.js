@@ -430,6 +430,7 @@ async function cargarVistaEditor() {
         ${await renderAntecedentes(m)}
         ${await renderVersiones(m.id)}
         ${await renderDictamenes(m.id)}
+        ${await renderControlConstancias(m)}
         ${await renderResultadosAutor(m)}
       </div>
     `);
@@ -683,4 +684,28 @@ async function guardarUmbralRevision(mid, boton) {
     alert('Número de dictámenes guardado.');
   } catch(error) { alert('No se pudo guardar: '+error.message); }
   finally { boton.disabled=false; }
+}
+
+async function renderControlConstancias(m) {
+ if(rolPanelActual!=='editor' && !(rolPanelActual==='editor_area'&&m.editor_area_asignado_id===usuarioPanelActual))return '';
+ const {data,error}=await db.rpc('rcia_estado_constancias',{mid:m.id});
+ if(error)return '<p>El registro de constancias no está disponible. Solicita al editor en jefe comprobar su activación.</p>';
+ if(!data?.length)return '';
+ return '<section style="margin:18px 0;padding:16px;border:1px solid #cbd5e1;border-radius:8px;"><h3>Constancias de revisión</h3><p>Control del envío manual. Marcar aquí no genera documentos ni envía correos.</p><ul>'+data.map(c=>'<li>'+escaparHTML(c.revisor)+' — '+(c.fecha_envio?'Constancia enviada el '+escaparHTML(c.fecha_envio)+' · Registrado por '+escaparHTML(c.registrado_por)+' el '+escaparHTML(formatoFecha(c.registrado_en)): 'Sin envío registrado'+(rolPanelActual==='editor'?' <button type="button" class="secundario" onclick="marcarConstanciaEnviada(\''+c.id+'\',this)">Marcar constancia enviada</button>':''))+'</li>').join('')+'</ul></section>';
+}
+async function marcarConstanciaEnviada(aid,boton) {
+ if(rolPanelActual!=='editor'||boton.disabled)return;
+ const fecha=prompt('Fecha en que enviaste manualmente la constancia (AAAA-MM-DD):','');
+ if(fecha===null)return;
+ if(!/^\d{4}-\d{2}-\d{2}$/.test(fecha)){alert('Escribe la fecha como AAAA-MM-DD.');return;}
+ if(!confirm('¿Confirmas que ya enviaste esta constancia el '+fecha+'? Se registrará tu nombre. Este botón no envía correos.'))return;
+ boton.disabled=true;
+ try {
+ const {data:identidad,error:sesionError}=await db.auth.getUser();
+ if(sesionError||identidad?.user?.id!==usuarioPanelActual)throw new Error('La cuenta activa cambió. Recarga el panel.');
+ const {error}=await db.rpc('rcia_marcar_constancia_enviada',{aid,fecha});
+ if(error)throw error;
+ await cargarVistaEditor();
+ }catch(error){alert('No se pudo confirmar el registro: '+error.message+' Revisa el panel antes de repetir.');}
+ finally{boton.disabled=false;}
 }
