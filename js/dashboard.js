@@ -330,7 +330,7 @@ async function cargarVistaEditor() {
   const { data: revisores } = await db.from('profiles').select('*').eq('role', 'revisor').eq('activo', true);
   const { data: editoresArea } = await db.from('profiles').select('*').eq('role', 'editor_area');
   const { data: asignaciones, error: errorAsignaciones } = await db.from('review_assignments')
-    .select('id, manuscript_id, reviewer_id, estado, fecha_respuesta_invitacion, motivo_declinacion');
+    .select('id, manuscript_id, reviewer_id, estado, fecha_asignacion, fecha_respuesta_invitacion, motivo_declinacion');
   if (errorAsignaciones) {
     cont.textContent = 'No se pudieron comprobar las asignaciones. Recarga el panel antes de asignar revisores.';
     return;
@@ -351,7 +351,7 @@ async function cargarVistaEditor() {
     // Editores de área cuya área asignada coincide con la de este
     // manuscrito (los demás igual pueden elegirse, pero se marcan aparte).
     const editoresAreaLista = (editoresArea || []).filter(e => !exclusionesPanel.some(x => x.manuscript_id === m.id && x.user_id === e.id));
-    const asignados = asignaciones.filter(a => a.manuscript_id === m.id);
+    const asignados = ordenarRevisores(asignaciones.filter(a => a.manuscript_id === m.id));
     const disponibles = (revisores || []).filter(r => !asignados.some(a => a.reviewer_id === r.id));
 
     cont.insertAdjacentHTML('beforeend', `
@@ -410,13 +410,13 @@ async function cargarVistaEditor() {
         </select>
 
         <label>Revisores asignados</label>
-        <ul>${asignados.map(a => {
+        <ul>${asignados.map((a, i) => {
           const r = (revisores || []).find(r => r.id === a.reviewer_id);
           const nombre = r ? r.nombre_completo + ' (' + r.email + ')' : 'Revisor registrado';
           const estado = {pendiente:'Pendiente de dictamen',aceptada:'Asignación aceptada',entregada:'Evaluación registrada',declinada:'Asignación declinada'}[a.estado] || a.estado;
           const reenvio = a.estado === 'pendiente' && r && !['aceptado','publicado','rechazado','desistido'].includes(m.estado)
             ? ` <button type="button" class="secundario" onclick="reenviarInvitacion('${a.id}', this)">Reenviar invitación</button>` : '';
-          return '<li>' + escaparHTML(nombre) + ' — ' + escaparHTML(estado) + (a.fecha_respuesta_invitacion ? ' · Respuesta: ' + formatoFecha(a.fecha_respuesta_invitacion) : '') + (a.motivo_declinacion ? '<br>Motivo: ' + escaparHTML(a.motivo_declinacion) : '') + reenvio + '</li>';
+          return '<li><strong>Revisor ' + (i + 1) + '</strong> · ' + escaparHTML(nombre) + ' — ' + escaparHTML(estado) + (a.fecha_respuesta_invitacion ? ' · Respuesta: ' + formatoFecha(a.fecha_respuesta_invitacion) : '') + (a.motivo_declinacion ? '<br>Motivo: ' + escaparHTML(a.motivo_declinacion) : '') + reenvio + '</li>';
         }).join('') || '<li>Aún no hay revisores asignados.</li>'}</ul>
         <label>Asignar otro revisor</label>
         <div style="display:flex; gap:8px;">
@@ -566,13 +566,13 @@ iniciarPanel();
 
 async function renderDictamenes(manuscriptId) {
   const {data: asignaciones, error} = await db.from('review_assignments')
-    .select('id, estado, reviews(*)').eq('manuscript_id', manuscriptId);
+    .select('id, estado, fecha_asignacion, reviews(*)').eq('manuscript_id', manuscriptId);
   if (error) return '<p>No se pudieron cargar los dictámenes.</p>';
   if (!asignaciones?.length) return '<p>Sin revisores asignados.</p>';
-  return '<h3>Evaluaciones</h3>' + asignaciones.map((a, i) => {
+  return '<h3>Evaluaciones</h3>' + ordenarRevisores(asignaciones).map((a, i) => {
     const encabezado = `<p>Revisor ${i + 1}: ${escaparHTML(a.estado)}</p>`;
     return encabezado + (a.reviews || []).map(r => `<details>
-      <summary>${escaparHTML(r.decision)} · ${r.puntaje_total ?? '—'}/32</summary>
+      <summary>Dictamen del Revisor ${i + 1} · ${escaparHTML(r.decision)} · ${r.puntaje_total ?? '—'}/32</summary>
       ${(r.criterios || []).map(c => `<p><strong>${escaparHTML(c.titulo)}: ${escaparHTML(c.puntaje)}/4</strong><br>${escaparHTML(c.comentario)}</p>`).join('')}
       <p><strong>Comentario privado al editor:</strong> ${escaparHTML(r.comentarios_editor || 'Sin comentarios')}</p>
       <p>Segunda revisión: ${escaparHTML(r.necesita_segunda_revision || 'No aplica')}.
@@ -708,4 +708,9 @@ async function marcarConstanciaEnviada(aid,boton) {
  await cargarVistaEditor();
  }catch(error){alert('No se pudo confirmar el registro: '+error.message+' Revisa el panel antes de repetir.');}
  finally{boton.disabled=false;}
+}
+
+// El mismo orden en asignaciones y dictámenes; desempate determinista por ID.
+function ordenarRevisores(asignaciones) {
+ return [...asignaciones].sort((a,b)=>String(a.fecha_asignacion||'').localeCompare(String(b.fecha_asignacion||'')) || String(a.id).localeCompare(String(b.id)));
 }
