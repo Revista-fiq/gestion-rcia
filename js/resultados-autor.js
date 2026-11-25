@@ -1,10 +1,9 @@
 // Copias editoriales revisadas para el autor; no expone las filas privadas de reviews.
 function borradorResultados(asignaciones) {
  const decisiones={aceptar:'Aceptar',revision_menor:'Revisiones menores',revision_mayor:'Revisiones mayores',rechazar:'Rechazar'};
- let numero=0;
- return asignaciones.filter(a=>a.estado==='entregada').flatMap(a=>(a.reviews||[]).map(r=>{
-  numero++;
-  return ['Evaluación '+numero,
+ return asignaciones.flatMap((a,i)=>(a.estado==='entregada' ? a.reviews||[] : []).map(r=>{
+  const numero=i+1;
+  return ['Dictamen del Revisor '+numero,
    'Recomendación del revisor: '+(decisiones[r.decision]||'Consultar observaciones'),
    ...(r.criterios||[]).map(c=>String(c.titulo||'Criterio')+'\n'+String(c.comentario||'Sin observaciones.')),
    r.comentarios_autor||''].filter(Boolean).join('\n\n');
@@ -33,7 +32,7 @@ async function prepararResultadosAutor(mid,boton) {
  boton.disabled=true;
  try {
   const {data,error}=await db.from('review_assignments')
-   .select('id,estado,reviews(decision,criterios,comentarios_autor)').eq('manuscript_id',mid).order('fecha_asignacion');
+   .select('id,estado,reviews(decision,criterios,comentarios_autor)').eq('manuscript_id',mid).order('fecha_asignacion').order('id');
   if(error)throw error;
   const {data:previos,error:errorPrevios}=await db.from('editorial_antecedents').select('id').eq('manuscript_id',mid).eq('tipo','dictamen');
   if(errorPrevios)throw errorPrevios;
