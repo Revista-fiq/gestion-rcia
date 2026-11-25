@@ -71,6 +71,7 @@ async function iniciarPanel() {
     document.getElementById('subtitulo-panel').textContent = 'Manuscritos que tienes asignados para dictamen.';
     document.getElementById('vista-revisor').classList.remove('oculto');
     cargarVistaRevisor(session.user.id);
+    cargarMisConstancias();
 
   } else if (perfil.role === 'editor') {
     document.getElementById('titulo-panel').textContent = 'Panel editorial';
@@ -430,6 +431,7 @@ async function cargarVistaEditor() {
         ${await renderAntecedentes(m)}
         ${await renderVersiones(m.id)}
         ${await renderDictamenes(m.id)}
+        ${await renderConstanciasDescarga(m)}
         ${await renderControlConstancias(m)}
         ${await renderResultadosAutor(m)}
       </div>
@@ -714,3 +716,4 @@ async function marcarConstanciaEnviada(aid,boton) {
 function ordenarRevisores(asignaciones) {
  return [...asignaciones].sort((a,b)=>String(a.fecha_asignacion||'').localeCompare(String(b.fecha_asignacion||'')) || String(a.id).localeCompare(String(b.id)));
 }
+
