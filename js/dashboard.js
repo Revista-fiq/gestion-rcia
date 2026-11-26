@@ -267,14 +267,15 @@ async function cargarVistaRevisor(userId) {
             <div class="titulo-manuscrito">${escaparHTML(m.titulo)}</div>
           </div>
           <span class="estado estado-${a.estado === 'entregada' ? 'aceptado' : 'en_revision'}">
-            ${a.estado === 'entregada' ? 'Evaluación registrada' : a.estado === 'declinada' ? 'Asignación declinada' : 'Pendiente de dictamen'}
+            ${escaparHTML(etiquetaEstadoAsignacion(a.estado))}
           </span>
         </div>
         <p style="font-size:13px; color:var(--gris-texto);">${escaparHTML(m.resumen || '')}</p>
-        ${m.archivo_manuscrito_url
+        ${a.estado === 'cerrada' ? '<p>Esta asignación fue cerrada por el equipo editorial. Ya no requiere un dictamen.</p>' : ''}
+        ${m.archivo_manuscrito_url && a.estado !== 'cerrada'
           ? `<a href="${escaparHTML(m.archivo_manuscrito_url)}" target="_blank" rel="noopener noreferrer" class="boton secundario"
                style="text-decoration:none; display:inline-block;">Ver manuscrito (versión anonimizada)</a>`
-          : `<span style="font-size:13px; color:var(--gris-texto);">El editor aún no ha subido la versión anonimizada.</span>`
+          : `<span style="font-size:13px; color:var(--gris-texto);">${a.estado === 'cerrada' ? 'El acceso al archivo de esta asignación está cerrado.' : 'El editor aún no ha subido la versión anonimizada.'}</span>`
         }
         ${a.estado === 'pendiente' ? `<p>¿Cuenta con disponibilidad para evaluar este manuscrito?</p><button onclick="responderInvitacion('${a.id}',true)">Aceptar invitación</button> <button class="secundario" onclick="responderInvitacion('${a.id}',false)">Declinar invitación</button>` : ''}
         ${a.estado === 'aceptada' && m.archivo_manuscrito_url ? `
@@ -383,6 +384,7 @@ async function cargarVistaEditor() {
   cacheEditoresArea = editoresArea || [];
   revisoresPanelActual = revisores || [];
   actualizarSelectorManuscritos(manuscritos);
+  contextoCierres.clear();
 
   cont.innerHTML = '';
   for (const m of manuscritos) {
@@ -391,6 +393,7 @@ async function cargarVistaEditor() {
     const editoresAreaLista = (editoresArea || []).filter(e => !exclusionesPanel.some(x => x.manuscript_id === m.id && x.user_id === e.id));
     const asignados = ordenarRevisores(asignaciones.filter(a => a.manuscript_id === m.id));
     const disponibles = (revisores || []).filter(r => !asignados.some(a => a.reviewer_id === r.id));
+    const cierres = await cargarCierresAsignaciones(m, asignados, revisores || []);
 
     cont.insertAdjacentHTML('beforeend', `
       <div class="tarjeta" data-manuscrito-editor="${m.id}" style="${manuscritoEditorSeleccionado && manuscritoEditorSeleccionado !== m.id ? 'display:none;' : ''}">
@@ -452,11 +455,11 @@ async function cargarVistaEditor() {
         <label>Revisores asignados</label>
         <ul>${asignados.map((a, i) => {
           const r = (revisores || []).find(r => r.id === a.reviewer_id);
-          const nombre = r ? r.nombre_completo + ' (' + r.email + ')' : 'Revisor registrado';
-          const estado = {pendiente:'Pendiente de dictamen',aceptada:'Asignación aceptada',entregada:'Evaluación registrada',declinada:'Asignación declinada'}[a.estado] || a.estado;
+          const nombre = r ? r.nombre_completo + ' (' + r.email + ')' : cierres.registros.get(a.id)?.nombre_revisor || 'Revisor registrado';
+          const estado = etiquetaEstadoAsignacion(a.estado);
           const reenvio = a.estado === 'pendiente' && r && !['aceptado','publicado','rechazado','desistido'].includes(m.estado)
             ? ` <button type="button" class="secundario" onclick="reenviarInvitacion('${a.id}', this)">Reenviar invitación</button>` : '';
-          return '<li><strong>Revisor ' + (i + 1) + '</strong> · ' + escaparHTML(nombre) + ' — ' + escaparHTML(estado) + (a.fecha_respuesta_invitacion ? ' · Respuesta: ' + formatoFecha(a.fecha_respuesta_invitacion) : '') + (a.motivo_declinacion ? '<br>Motivo: ' + escaparHTML(a.motivo_declinacion) : '') + reenvio + '</li>';
+          return '<li><strong>Revisor ' + (i + 1) + '</strong> · ' + escaparHTML(nombre) + ' — ' + escaparHTML(estado) + (a.fecha_respuesta_invitacion ? ' · Respuesta: ' + formatoFecha(a.fecha_respuesta_invitacion) : '') + (a.motivo_declinacion ? '<br>Motivo: ' + escaparHTML(a.motivo_declinacion) : '') + reenvio + renderCierreAsignacion(a,m,cierres) + '</li>';
         }).join('') || '<li>Aún no hay revisores asignados.</li>'}</ul>
         <label>Asignar otro revisor</label>
         <div style="display:flex; gap:8px;">
@@ -612,7 +615,7 @@ async function renderDictamenes(manuscriptId) {
   if (error) return '<p>No se pudieron cargar los dictámenes.</p>';
   if (!asignaciones?.length) return '<p>Sin revisores asignados.</p>';
   return '<h3>Evaluaciones</h3>' + ordenarRevisores(asignaciones).map((a, i) => {
-    const encabezado = `<p>Revisor ${i + 1}: ${escaparHTML(a.estado)}</p>`;
+    const encabezado = `<p>Revisor ${i + 1}: ${escaparHTML(etiquetaEstadoAsignacion(a.estado))}</p>`;
     return encabezado + (a.reviews || []).map(r => `<details>
       <summary>Dictamen del Revisor ${i + 1} · ${escaparHTML(r.decision)} · ${r.puntaje_total ?? '—'}/32</summary>
       ${(r.criterios || []).map(c => `<p><strong>${escaparHTML(c.titulo)}: ${escaparHTML(c.puntaje)}/4</strong><br>${escaparHTML(c.comentario)}</p>`).join('')}

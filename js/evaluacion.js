@@ -46,6 +46,10 @@ async function iniciar() {
   document.getElementById('infoFolio').textContent = `${manuscritoActual.folio} — ${manuscritoActual.titulo}`;
   document.getElementById('infoResumen').textContent = manuscritoActual.resumen || '—';
 
+  if (asignacion.estado === 'cerrada') {
+    document.getElementById('infoResumen').textContent = 'Esta asignación fue cerrada por el equipo editorial. Ya no requiere un dictamen.';
+    return;
+  }
   if (asignacion.estado === 'declinada' || !manuscritoActual.archivo_manuscrito_url) {
     document.getElementById('infoResumen').textContent = 'Esta asignación no está disponible para evaluación.';
     return;
