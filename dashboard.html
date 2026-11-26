@@ -46,6 +46,14 @@
   <!-- Vista EDITOR / EDITOR DE ÁREA (comparten la misma UI; RLS filtra por área automáticamente) -->
   <div id="vista-editor" class="oculto">
     <h2 id="titulo-lista-editor">Todos los manuscritos</h2>
+    <div id="filtro-manuscritos-editor" hidden style="margin:16px 0;padding:16px;border:1px solid #cbd5e1;border-radius:8px;">
+      <label for="selector-manuscrito-editor">Seleccionar manuscrito</label>
+      <select id="selector-manuscrito-editor" onchange="seleccionarManuscritoEditor(this.value)" aria-controls="lista-manuscritos-editor">
+        <option value="">Todos los manuscritos</option>
+      </select>
+      <button id="ver-todos-manuscritos" type="button" class="secundario" hidden onclick="seleccionarManuscritoEditor('')">Volver a todos los manuscritos</button>
+      <p id="estado-filtro-manuscritos" role="status" style="margin-bottom:0;"></p>
+    </div>
     <div id="lista-manuscritos-editor"><p class="vacio">Cargando…</p></div>
   </div>
 </div>
@@ -56,7 +64,7 @@
 <script src="js/expediente.js"></script>
 <script src="js/resultados-autor.js?v=20261124-numeracion"></script>
 <script src="js/constancias.js?v=20261125-descarga"></script>
-<script src="js/dashboard.js?v=20261125-descarga"></script>
+<script src="js/dashboard.js?v=20261125-selector"></script>
 </body>
 </html>
 

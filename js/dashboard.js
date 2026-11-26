@@ -317,6 +317,42 @@ function renderEditorAreaAsignado(m, editores, rol) {
   </details>`;
 }
 
+
+let manuscritoEditorSeleccionado = '';
+
+function actualizarSelectorManuscritos(manuscritos) {
+  const selector = document.getElementById('selector-manuscrito-editor');
+  const bloque = document.getElementById('filtro-manuscritos-editor');
+  if (!selector || !bloque) return;
+  if (!manuscritos.some(m => m.id === manuscritoEditorSeleccionado)) manuscritoEditorSeleccionado = '';
+  selector.replaceChildren(new Option('Todos los manuscritos', ''));
+  for (const m of manuscritos) selector.add(new Option(m.folio + ' — ' + m.titulo, m.id));
+  selector.value = manuscritoEditorSeleccionado;
+  bloque.hidden = manuscritos.length === 0;
+  aplicarFiltroManuscritos();
+}
+
+function seleccionarManuscritoEditor(id) {
+  const selector = document.getElementById('selector-manuscrito-editor');
+  if (!selector || !Array.from(selector.options).some(o => o.value === id)) return;
+  manuscritoEditorSeleccionado = id;
+  selector.value = id;
+  aplicarFiltroManuscritos();
+}
+
+function aplicarFiltroManuscritos() {
+  document.querySelectorAll('#lista-manuscritos-editor > [data-manuscrito-editor]').forEach(tarjeta => {
+    tarjeta.style.display = manuscritoEditorSeleccionado && tarjeta.dataset.manuscritoEditor !== manuscritoEditorSeleccionado ? 'none' : '';
+  });
+  const selector = document.getElementById('selector-manuscrito-editor');
+  const estado = document.getElementById('estado-filtro-manuscritos');
+  const volver = document.getElementById('ver-todos-manuscritos');
+  if (estado && selector) estado.textContent = manuscritoEditorSeleccionado
+    ? 'Mostrando solo: ' + selector.selectedOptions[0].textContent
+    : 'Mostrando todos los manuscritos, del más reciente al más antiguo.';
+  if (volver) volver.hidden = !manuscritoEditorSeleccionado;
+}
+
 async function cargarVistaEditor() {
   const cont = document.getElementById('lista-manuscritos-editor');
 
@@ -326,7 +362,7 @@ async function cargarVistaEditor() {
     .order('created_at', { ascending: false });
 
   if (error) { cont.innerHTML = `<div class="aviso aviso-error">Error al cargar: ${error.message}</div>`; return; }
-  if (!manuscritos.length) { cont.innerHTML = '<p class="vacio">Aún no se han recibido manuscritos.</p>'; return; }
+  if (!manuscritos.length) { actualizarSelectorManuscritos([]); cont.innerHTML = '<p class="vacio">Aún no se han recibido manuscritos.</p>'; return; }
 
   const { data: revisores } = await db.from('profiles').select('*').eq('role', 'revisor').eq('activo', true);
   const { data: editoresArea } = await db.from('profiles').select('*').eq('role', 'editor_area');
@@ -346,6 +382,7 @@ async function cargarVistaEditor() {
   cacheManuscritos = Object.fromEntries(manuscritos.map(m => [m.id, m]));
   cacheEditoresArea = editoresArea || [];
   revisoresPanelActual = revisores || [];
+  actualizarSelectorManuscritos(manuscritos);
 
   cont.innerHTML = '';
   for (const m of manuscritos) {
@@ -356,7 +393,7 @@ async function cargarVistaEditor() {
     const disponibles = (revisores || []).filter(r => !asignados.some(a => a.reviewer_id === r.id));
 
     cont.insertAdjacentHTML('beforeend', `
-      <div class="tarjeta">
+      <div class="tarjeta" data-manuscrito-editor="${m.id}" style="${manuscritoEditorSeleccionado && manuscritoEditorSeleccionado !== m.id ? 'display:none;' : ''}">
         <div class="tarjeta-cabecera">
           <div>
             <div class="folio">${m.folio} · ${m.profiles?.nombre_completo || 'Autor'} · ${m.area_tematica}</div>
@@ -364,6 +401,8 @@ async function cargarVistaEditor() {
           </div>
           ${chipEstado(m.estado)}
         </div>
+
+        <button type="button" class="secundario" onclick="seleccionarManuscritoEditor('${m.id}'); document.getElementById('filtro-manuscritos-editor').scrollIntoView({block:'start'});">Ver solo este manuscrito</button>
 
         <label>Archivo original (con datos de autoría)</label>
         <a href="${escaparHTML(m.archivo_manuscrito_url)}" target="_blank" rel="noopener noreferrer" class="boton secundario"
@@ -436,6 +475,7 @@ async function cargarVistaEditor() {
         ${await renderResultadosAutor(m)}
       </div>
     `);
+    aplicarFiltroManuscritos();
   }
 }
 
