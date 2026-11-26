@@ -731,9 +731,10 @@ async function guardarUmbralRevision(mid, boton) {
 async function renderControlConstancias(m) {
  if(rolPanelActual!=='editor' && !(rolPanelActual==='editor_area'&&m.editor_area_asignado_id===usuarioPanelActual))return '';
  const {data,error}=await db.rpc('rcia_estado_constancias',{mid:m.id});
- if(error)return '<p>El registro de constancias no está disponible. Solicita al editor en jefe comprobar su activación.</p>';
- if(!data?.length)return '';
- return '<section style="margin:18px 0;padding:16px;border:1px solid #cbd5e1;border-radius:8px;"><h3>Constancias de revisión</h3><p>Control del envío manual. Marcar aquí no genera documentos ni envía correos.</p><ul>'+data.map(c=>'<li>'+escaparHTML(c.revisor)+' — '+(c.fecha_envio?'Constancia enviada el '+escaparHTML(c.fecha_envio)+' · Registrado por '+escaparHTML(c.registrado_por)+' el '+escaparHTML(formatoFecha(c.registrado_en)): 'Sin envío registrado'+(rolPanelActual==='editor'?' <button type="button" class="secundario" onclick="marcarConstanciaEnviada(\''+c.id+'\',this)">Marcar constancia enviada</button>':''))+'</li>').join('')+'</ul></section>';
+ if(error)return '<p>No se pudo consultar el historial de envíos manuales de PDF.</p>';
+ const enviados=(data||[]).filter(c=>c.fecha_envio);
+ if(!enviados.length)return '';
+ return '<details style="margin:18px 0;padding:16px;border:1px solid #cbd5e1;border-radius:8px;"><summary>Historial de constancias enviadas como PDF</summary><p>Registros anteriores de envío manual del documento. Los avisos de disponibilidad y las descargas se muestran arriba.</p><ul>'+enviados.map(c=>'<li>'+escaparHTML(c.revisor)+' — PDF enviado el '+escaparHTML(c.fecha_envio)+' · Registrado por '+escaparHTML(c.registrado_por)+'</li>').join('')+'</ul></details>';
 }
 async function marcarConstanciaEnviada(aid,boton) {
  if(rolPanelActual!=='editor'||boton.disabled)return;

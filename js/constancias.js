@@ -4,6 +4,45 @@ const constanciasPanel = new Map();
 const constanciasOcupadas = new Set();
 const BUCKET_CONSTANCIAS = 'constancias-revision';
 
+async function consultarSeguimientoConstancias(mid) {
+  const args = mid ? {mid} : {};
+  const resultado = await db.rpc('rcia_seguimiento_constancias', args);
+  // Compatibilidad mientras se activa el nuevo script en Supabase.
+  if (resultado.error && ['PGRST202','42883'].includes(resultado.error.code)) {
+    return db.rpc('rcia_listar_constancias', args);
+  }
+  return resultado;
+}
+
+function estadoSeguimientoConstancia(c) {
+  if (!c.seguimiento_activo) return '<p>Seguimiento de avisos y descargas pendiente de activar.</p>';
+  const aviso = c.aviso_enviado
+    ? 'Aviso enviado el ' + escaparHTML(c.aviso_enviado) + '.'
+    : 'Aviso sin registrar.' + (rolPanelActual === 'editor'
+      ? ' <button type="button" class="secundario" onclick="registrarAvisoConstancia(\''+c.assignment_id+'\',this)">Registrar aviso enviado</button>' : '');
+  const descarga = c.primera_descarga
+    ? 'Descarga registrada el ' + escaparHTML(formatoFecha(c.primera_descarga)) + '.'
+    : 'Sin descargas registradas desde la activación del seguimiento.';
+  return '<p>'+aviso+'</p><p>'+descarga+'</p>';
+}
+
+async function registrarAvisoConstancia(aid,boton) {
+  const c=constanciasPanel.get(aid);
+  if(rolPanelActual!=='editor'||!c?.validado_en||boton.disabled)return;
+  const fecha=prompt('Fecha en que enviaste el aviso de disponibilidad (AAAA-MM-DD):','');
+  if(fecha===null)return;
+  if(!/^\d{4}-\d{2}-\d{2}$/.test(fecha)){alert('Escribe la fecha como AAAA-MM-DD.');return;}
+  if(!confirm('¿Confirmas que ya enviaste a '+c.revisor+' el aviso para '+c.folio+' el '+fecha+'? Este botón solo registra el aviso; no envía correo.'))return;
+  boton.disabled=true;
+  try {
+    await identidadConstancias();
+    const {error}=await db.rpc('rcia_registrar_aviso_constancia',{cid:c.id,fecha});
+    if(error)throw error;
+    await cargarVistaEditor();
+  }catch(error){alert('No se pudo confirmar el registro del aviso: '+error.message);}
+  finally{boton.disabled=false;}
+}
+
 async function identidadConstancias() {
   const {data,error}=await db.auth.getUser();
   if(error || data?.user?.id!==usuarioPanelActual) throw new Error('La cuenta activa cambió. Recarga el panel.');
@@ -12,10 +51,10 @@ async function identidadConstancias() {
 
 async function renderConstanciasDescarga(m) {
   if(rolPanelActual!=='editor' && !(rolPanelActual==='editor_area' && m.editor_area_asignado_id===usuarioPanelActual))return '';
-  const {data,error}=await db.rpc('rcia_listar_constancias',{mid:m.id});
+  const {data,error}=await consultarSeguimientoConstancias(m.id);
   if(error)return '<p>La descarga de constancias aún no está disponible. El editor en jefe debe comprobar la activación de schema_constancias_descarga.sql.</p>';
   if(!data?.length)return '';
-  return '<section style="margin:18px 0;padding:18px;border:2px solid #164d70;border-radius:8px;"><h3>Constancias para descargar</h3><p>Primera ronda. Cada PDF queda privado hasta que el editor en jefe lo revise y valide. El aviso por correo se envía manualmente.</p>'+
+  return '<section style="margin:18px 0;padding:18px;border:2px solid #164d70;border-radius:8px;"><h3>Constancias para descargar</h3><p>Primera ronda. Cada PDF queda privado hasta que el editor en jefe lo revise y valide. El aviso por correo se envía manualmente. La descarga registrada indica que el portal entregó el PDF al navegador del revisor; no confirma que lo haya abierto o guardado.</p>'+
     data.map(c=>{
       constanciasPanel.set(c.assignment_id,{...c,mid:m.id});
       const aid=c.assignment_id;
@@ -23,7 +62,7 @@ async function renderConstanciasDescarga(m) {
       let control='';
       if(c.validado_en) {
         control='<p><strong>Disponible para el revisor</strong> · Validada por '+escaparHTML(c.validado_por||'Editor en jefe')+' el '+escaparHTML(formatoFecha(c.validado_en))+'.</p>'+
-          '<button type="button" class="secundario" onclick="descargarConstancia(\''+aid+'\',this)">Descargar PDF</button>';
+          estadoSeguimientoConstancia(c)+'<button type="button" class="secundario" onclick="descargarConstancia(\''+aid+'\',this)">Descargar PDF</button>';
       } else if(rolPanelActual==='editor') {
         control=(c.id?'<p><strong>Borrador cargado; todavía no disponible para el revisor.</strong></p><button type="button" onclick="revisarConstancia(\''+aid+'\',this)">Revisar y validar constancia</button>':'<p>Pendiente de cargar PDF y validar.</p>')+
           '<details style="margin-top:12px;"><summary>'+(c.id?'Sustituir borrador PDF':'Cargar constancia PDF')+'</summary><p>Selecciona la constancia de <strong>'+nombre+'</strong>, correspondiente a <strong>'+escaparHTML(c.folio)+'</strong>. Máximo 10 MB.</p>'+
@@ -37,7 +76,7 @@ async function renderConstanciasDescarga(m) {
 async function cargarMisConstancias() {
   const cont=document.getElementById('mis-constancias');
   if(!cont)return;
-  const {data,error}=await db.rpc('rcia_listar_constancias');
+  const {data,error}=await consultarSeguimientoConstancias();
   if(error){cont.textContent='No se pudo consultar la disponibilidad de constancias. Contacta a la revista si el problema persiste.';return;}
   if(!data?.length){cont.textContent='Aquí podrás descargar tus constancias después de la validación del editor en jefe.';return;}
   cont.innerHTML=data.map(c=>{
@@ -85,6 +124,14 @@ async function descargarConstancia(aid,boton) {
     const a=document.createElement('a');a.href=url;
     a.download='Constancia_'+c.folio+'_'+c.revisor.replace(/[^\p{L}\p{N}]+/gu,'_')+'.pdf';
     document.body.append(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),60000);
+    if(rolPanelActual==='revisor' && c.seguimiento_activo) {
+      try {
+        const {error:registro}=await db.rpc('rcia_registrar_descarga_constancia',{cid:c.id,peticion:crypto.randomUUID()});
+        if(registro)throw registro;
+      } catch(error) {
+        alert('Se inició la descarga del PDF, pero no se pudo registrar en el seguimiento. No necesitas volver a descargarlo si ya lo tienes.');
+      }
+    }
   }catch(error){alert('No se pudo descargar la constancia: '+error.message);}
   finally{boton.disabled=false;}
 }

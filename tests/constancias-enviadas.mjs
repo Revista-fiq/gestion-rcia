@@ -185,6 +185,31 @@ try {
  assert.equal(anonVisible.rows.length,0);
 }finally{await db.exec('reset role');}
 console.log('PASS: dictamen del formulario, asignación sin dictamen bloqueada, dos constancias para la misma persona y acceso anónimo denegado.');
+await db.exec(file('schema_constancias_seguimiento.sql'));
+await db.exec(file('schema_constancias_seguimiento.sql'));
+const cert=(await db.query('select id from rcia_constancias where assignment_id=$1',[asig])).rows[0].id;
+const cert2=(await db.query('select id from rcia_constancias where assignment_id=$1',[a3])).rows[0].id;
+const req='50000000-0000-0000-0000-000000000001';
+const record=(cid=cert,peticion=req)=>db.query('select rcia_registrar_descarga_constancia($1,$2)',[cid,peticion]);
+const notice=()=>db.query("select rcia_registrar_aviso_constancia($1,(now() at time zone 'America/Merida')::date)",[cert]);
+for(const uid of [chief,editor,autor,otro])await as(uid,()=>assert.rejects(record()));
+for(const uid of [revisor,editor,autor,otro])await as(uid,()=>assert.rejects(notice()));
+await as(revisor,()=>record());await as(revisor,()=>record());
+await as(revisor,()=>assert.rejects(record(cert2,req)));
+assert.equal((await db.query('select count(*) n from rcia_constancia_descargas')).rows[0].n,1);
+await as(chief,notice);await as(chief,notice);
+assert.equal((await db.query('select count(*) n from rcia_constancia_avisos')).rows[0].n,1);
+const seguimiento=(await as(revisor,()=>db.query('select rcia_seguimiento_constancias() r'))).rows[0].r;
+assert.equal(seguimiento.find(c=>c.id===cert).descargas,1);
+assert(seguimiento.find(c=>c.id===cert).primera_descarga);
+assert(seguimiento.find(c=>c.id===cert).aviso_enviado);
+assert.equal(seguimiento.find(c=>c.id===cert2).descargas,0);
+assert.equal(seguimiento.find(c=>c.id===cert2).aviso_enviado,null);
+await db.query('update profiles set activo=false where id=$1',[revisor]);
+await as(revisor,()=>assert.rejects(record()));
+await as(autor,()=>assert.rejects(db.query('select rcia_seguimiento_constancias($1)',[man])));
+assert.equal((await db.query('select count(*) n from rcia_constancias_enviadas')).rows[0].n,1);
+console.log('PASS: avisos separados, solo destinatario registra descarga, idempotencia, sin confundir otros manuscritos e historial manual conservado.');
 await db.close();
 
 

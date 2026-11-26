@@ -34,7 +34,18 @@ Saludos cordiales,
 Luis Antonio Chel Guerrero
 Editor en jefe · RCIA-UADY
 
-No enviar contraseñas en este aviso. El control anterior **Marcar constancia enviada** sigue disponible para los PDF enviados manualmente; publicar para descarga no lo marca automáticamente. No equivale a comprobar que el revisor haya descargado el documento.
+No enviar contraseñas en este aviso. El control anterior **Marcar constancia enviada** se sustituye por el seguimiento descrito a continuación. Los registros anteriores se conservan en **Historial de constancias enviadas como PDF**.
+
+## Seguimiento de publicación, aviso y descarga
+
+Ejecutar `schema_constancias_seguimiento.sql` después del script de descarga y recargar con Ctrl+F5. El script incorpora los siete avisos enviados por Outlook el 25/11/2026 para las constancias publicadas de la tanda 006, 007, 009 y 010. Devuelve la relación de registros para comprobarla; no envía mensajes nuevos ni crea descargas ficticias.
+
+- **Pendiente de validación:** falta cargar o validar el documento.
+- **Disponible para el revisor:** el editor en jefe publicó la constancia.
+- **Aviso enviado:** consta la fecha del correo de disponibilidad. Para futuros avisos manuales, usar **Registrar aviso enviado** después de enviarlos; ese botón no envía correo.
+- **Descarga registrada:** el portal recibió el PDF y comenzó la descarga en el navegador del revisor. No confirma que lo haya guardado o leído. Las vistas previas y descargas de los editores no cuentan como descarga del revisor.
+
+Los estados se muestran por separado: una descarga no demuestra que se haya enviado un correo, ni el envío del correo demuestra una descarga. El registro empieza al activar este cambio; las descargas anteriores son desconocidas. Si falla el registro, el PDF sigue descargándose y se informa al revisor de la falta de registro.
 
 ## Alcance y controles
 
@@ -43,6 +54,6 @@ No enviar contraseñas en este aviso. El control anterior **Marcar constancia en
 - Solo el revisor destinatario activo, el jefe autorizado y el editor asociado asignado pueden leer una constancia publicada. Los autores y otros revisores no tienen acceso.
 - Se registra quién carga y valida, fechas, destinatario, folio, título y huella del archivo. La firma es una imagen autorizada; no es una firma criptográfica.
 - Un PDF ya descargado no se puede retirar del equipo del destinatario. No se publica la imagen de firma aislada ni el membrete en el repositorio.
-- No modifica dictámenes, invitaciones, estados editoriales ni envía correo automático. No registra todavía un acuse de descarga.
+- No modifica dictámenes, invitaciones ni estados editoriales, ni envía correo automático. El seguimiento de descarga es un evento del portal, no un acuse firmado del destinatario.
 
 Referencia técnica: https://supabase.com/docs/guides/storage/serving/downloads
